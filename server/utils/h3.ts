@@ -1,7 +1,9 @@
 import { H3Event } from 'h3'
 import z from 'zod'
 import { db } from '../db'
-import { Session } from '../db/schema'
+import { Session, User } from '../db/schema'
+import { eq } from 'drizzle-orm'
+import dayjs from 'dayjs'
 
 export async function readValidatedBodyEx<T extends z.ZodType>(
 	event: H3Event,
@@ -52,4 +54,32 @@ export async function assignSession(event: H3Event, userId: string) {
 export async function readSession(event: H3Event) {
 	const secure = getRequestProtocol(event) === 'https'
 	return getCookie(event, (secure ? '__Secure-' : '') + 'session')
+}
+
+export async function getAuthData(event: H3Event) {
+	const sessionToken = await readSession(event)
+	if (!sessionToken) return null
+	const res = await db
+		.select()
+		.from(Session)
+		.innerJoin(User, eq(Session.userId, User.id))
+		.where(eq(Session.token, sessionToken))
+	if (res.length === 0) return null
+
+	// Update lastSeen time
+	const session = res[0].sessions
+	if (session.lastSeen < dayjs().subtract(5, 'minutes').toDate()) {
+		db.update(Session)
+			.set({ lastSeen: new Date() })
+			.where(eq(Session.id, session.id))
+			.catch(() => {
+				// TODO: Switch to structured logging
+				console.error('Failed to update session lastSeen time', session.id)
+			})
+	}
+
+	return {
+		user: res[0].users,
+		session,
+	}
 }
