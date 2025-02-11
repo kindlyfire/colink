@@ -5,5 +5,5 @@ services:
     ports:
       - '127.0.0.1:5432:5432'
     environment:
-      - POSTGRES_USER=barman
-      - POSTGRES_PASSWORD=abcdef
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
