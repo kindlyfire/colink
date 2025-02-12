@@ -1,3 +1,3 @@
-import { drizzle } from 'drizzle-orm/bun-sql'
+import { drizzle } from 'drizzle-orm/node-postgres'
 
 export const db = drizzle(useRuntimeConfig().databaseUrl)

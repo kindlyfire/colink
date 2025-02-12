@@ -11,9 +11,9 @@ export default defineEventHandler(async event => {
 		},
 		session: {
 			id: authData.session.id,
-			lastSeen: authData.session.lastSeen.toISOString(),
+			lastSeen: authData.session.lastSeen,
 			label: authData.session.label,
-			createdAt: authData.session.createdAt.toISOString(),
+			createdAt: authData.session.createdAt,
 		},
 	}
 })

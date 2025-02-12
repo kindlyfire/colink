@@ -26,15 +26,16 @@ export const Session = pgTable('sessions', {
 	label: text(),
 })
 
-export const Link = pgTable(
-	'links',
+export const Post = pgTable(
+	'posts',
 	{
 		...defaultColumns,
 		userId: text()
 			.notNull()
 			.references(() => User.id, { onDelete: 'cascade' }),
+		type: text().notNull().$type<'link' | 'note'>(),
 		html: text().notNull(),
-		url: text().notNull(),
+		url: text(),
 	},
 	t => [unique().on(t.userId, t.url)]
 )
@@ -47,11 +48,11 @@ export const Tag = pgTable('tags', {
 	name: text().notNull(),
 })
 
-export const LinkTag = pgTable('link_tags', {
+export const PostTag = pgTable('post_tags', {
 	...defaultColumns,
-	linkId: text()
+	postId: text()
 		.notNull()
-		.references(() => Link.id, { onDelete: 'cascade' }),
+		.references(() => Post.id, { onDelete: 'cascade' }),
 	tagId: text()
 		.notNull()
 		.references(() => Tag.id, { onDelete: 'cascade' }),

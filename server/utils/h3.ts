@@ -41,19 +41,22 @@ export async function assignSession(event: H3Event, userId: string) {
 		userId,
 		token: sessionToken,
 	})
-	const secure = getRequestProtocol(event) === 'https'
-	setCookie(event, (secure ? '__Secure-' : '') + 'session', sessionToken, {
+	setCookie(event, getSessionCookieName(event), sessionToken, {
 		httpOnly: true,
-		secure,
+		secure: getRequestProtocol(event) === 'https',
 		sameSite: 'strict',
 		path: '/',
 	})
 	return sessionToken
 }
 
-export async function readSession(event: H3Event) {
+export function getSessionCookieName(event: H3Event) {
 	const secure = getRequestProtocol(event) === 'https'
-	return getCookie(event, (secure ? '__Secure-' : '') + 'session')
+	return (secure ? '__Secure-' : '') + 'session'
+}
+
+export async function readSession(event: H3Event) {
+	return getCookie(event, getSessionCookieName(event))
 }
 
 export async function getAuthData(event: H3Event) {
@@ -82,4 +85,12 @@ export async function getAuthData(event: H3Event) {
 		user: res[0].users,
 		session,
 	}
+}
+
+export async function mustGetAuthData(event: H3Event) {
+	const authData = await getAuthData(event)
+	if (!authData) {
+		throw createError({ statusCode: 401, message: 'Unauthorized' })
+	}
+	return authData
 }
