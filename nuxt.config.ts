@@ -6,6 +6,7 @@ export default defineNuxtConfig({
 	devtools: { enabled: true },
 	srcDir: 'app',
 	serverDir: 'server',
+	modules: ['@pinia/nuxt'],
 	vite: {
 		plugins: [tailwindcss()],
 	},
@@ -20,5 +21,10 @@ export default defineNuxtConfig({
 	runtimeConfig: {
 		databaseUrl: 'postgresql://postgres:postgres@127.0.0.1:5432/postgres',
 		registrationsEnabled: true,
+	},
+	nitro: {
+		experimental: {
+			websocket: true,
+		},
 	},
 })

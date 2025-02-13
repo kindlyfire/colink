@@ -13,9 +13,26 @@
 			</button>
 		</form>
 	</div>
-	<div>
-		<div v-for="post in posts ?? []">
-			{{ post.url }}
+	<div class="mt-4">
+		<div class="card bg-base-200">
+			<table class="table">
+				<thead>
+					<tr>
+						<th>ID</th>
+						<th>Type</th>
+						<th>URL</th>
+						<th>Created At</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr v-for="post in posts ?? []" :key="post.id">
+						<td>{{ post.id }}</td>
+						<td>{{ post.type }}</td>
+						<td>{{ post.url }}</td>
+						<td>{{ post.createdAt }}</td>
+					</tr>
+				</tbody>
+			</table>
 		</div>
 	</div>
 </template>

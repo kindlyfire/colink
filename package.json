@@ -10,12 +10,20 @@
 		"postinstall": "nuxt prepare"
 	},
 	"dependencies": {
+		"@ghostery/adblocker-puppeteer": "^2.5.0",
+		"@mozilla/readability": "^0.5.0",
 		"@paralleldrive/cuid2": "^2.2.2",
+		"@pinia/nuxt": "0.10.1",
 		"@tanstack/vue-query": "^5.66.0",
+		"bcrypt": "^5.1.1",
+		"cookie-es": "^1.2.2",
 		"dayjs": "^1.11.13",
 		"drizzle-orm": "^0.39.3",
 		"nuxt": "^3.15.4",
+		"partysocket": "^1.0.3",
 		"pg": "^8.13.1",
+		"pinia": "^3.0.1",
+		"puppeteer": "^24.2.0",
 		"vue": "latest",
 		"vue-router": "latest",
 		"zod": "^3.24.1"
@@ -40,6 +48,7 @@
 	},
 	"devDependencies": {
 		"@tailwindcss/vite": "^4.0.3",
+		"@types/bcrypt": "^5.0.2",
 		"@types/bun": "^1.2.2",
 		"@types/pg": "^8.11.11",
 		"bun-types": "^1.2.2",

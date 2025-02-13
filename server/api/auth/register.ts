@@ -2,10 +2,11 @@ import { createError } from 'h3'
 import { z } from 'zod'
 import { db } from '~~/server/db'
 import { User } from '~~/server/db/schema'
+import bcrypt from 'bcrypt'
 
 const schema = z.object({
-	username: z.string().min(3),
-	password: z.string().min(6),
+	username: z.string().nonempty(),
+	password: z.string().min(8),
 })
 
 export default defineEventHandler(async event => {
@@ -20,7 +21,7 @@ export default defineEventHandler(async event => {
 	}
 
 	const body = await readValidatedBodyEx(event, schema)
-	const hashedPassword = await Bun.password.hash(body.password)
+	const hashedPassword = await bcrypt.hash(body.password, 11)
 
 	try {
 		var [newUser] = await db

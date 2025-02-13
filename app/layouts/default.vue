@@ -2,9 +2,7 @@
 	<div class="fixed top-0 left-0 bottom-0 w-[17rem] p-4 flex flex-col">
 		<div class="navbar invisible"></div>
 		<ul class="menu w-full bg-base-200 rounded-box grow overflow-y-auto flex-nowrap">
-			<li><a>Item 1</a></li>
-			<li><a>Item 2</a></li>
-			<li><a>Item 3</a></li>
+			<li><a>All Posts</a></li>
 		</ul>
 	</div>
 	<div class="navbar bg-base-100 shadow-sm fixed">
@@ -45,6 +43,9 @@
 </template>
 
 <script lang="ts" setup>
+import { useWebsocket } from '~/stores/ws'
+
 const authData = useAuthData()
 const mLogout = useLogoutMutation()
+useWebsocket()
 </script>

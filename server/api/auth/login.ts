@@ -3,10 +3,11 @@ import { createError } from 'h3'
 import { z } from 'zod'
 import { db } from '~~/server/db'
 import { User } from '~~/server/db/schema'
+import bcrypt from 'bcrypt'
 
 const schema = z.object({
-	username: z.string(),
-	password: z.string(),
+	username: z.string().nonempty(),
+	password: z.string().nonempty(),
 })
 
 export default defineEventHandler(async event => {
@@ -18,11 +19,8 @@ export default defineEventHandler(async event => {
 	if (!user) {
 		throw createError({ statusCode: 401, statusMessage: 'User not found' })
 	}
-	if (!user.password) {
-		throw createError({ statusCode: 401, statusMessage: 'Invalid username or password' })
-	}
 
-	const passwordValid = await Bun.password.verify(body.password, user.password)
+	const passwordValid = await bcrypt.compare(body.password, user.password)
 	if (!passwordValid) {
 		throw createError({ statusCode: 401, statusMessage: 'Invalid username or password' })
 	}

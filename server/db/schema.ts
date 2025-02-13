@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, unique } from 'drizzle-orm/pg-core'
+import { jsonb, pgTable, text, timestamp, unique } from 'drizzle-orm/pg-core'
 import { createId } from '@paralleldrive/cuid2'
 
 const defaultColumns = {
@@ -13,7 +13,7 @@ const defaultColumns = {
 export const User = pgTable('users', {
 	...defaultColumns,
 	username: text().unique().notNull(),
-	password: text(),
+	password: text().notNull(),
 })
 
 export const Session = pgTable('sessions', {
@@ -36,6 +36,10 @@ export const Post = pgTable(
 		type: text().notNull().$type<'link' | 'note'>(),
 		html: text().notNull(),
 		url: text(),
+		title: text().notNull(),
+		titleOverride: text(),
+		scrapeProgress: jsonb().$type<null | {}>(),
+		scrapedAt: timestamp(),
 	},
 	t => [unique().on(t.userId, t.url)]
 )
