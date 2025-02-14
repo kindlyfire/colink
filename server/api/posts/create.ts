@@ -1,7 +1,8 @@
 import { z } from 'zod'
 import { db } from '~~/server/db'
 import { Post } from '~~/server/db/schema'
-import { wsPeerTracker } from '../ws'
+import { wsPeerManager } from '../ws'
+import { scrapingManager } from '~~/server/scraper/manager'
 
 const schema = z.object({
 	url: z.string().url(),
@@ -20,10 +21,14 @@ export default defineEventHandler(async event => {
 			html: '',
 			url: body.url,
 			title: '',
+			scrapeState: {
+				pending: true,
+			},
 		})
 		.returning()
 
-	wsPeerTracker.sendDataChangedEvent(authData.user.id)
+	wsPeerManager.sendDataChangedEvent(authData.user.id)
+	scrapingManager.addToQueue(post)
 
 	return post
 })

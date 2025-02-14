@@ -38,11 +38,20 @@ export const Post = pgTable(
 		url: text(),
 		title: text().notNull(),
 		titleOverride: text(),
-		scrapeProgress: jsonb().$type<null | {}>(),
+		scrapeState: jsonb().$type<null | {
+			pending?: boolean
+			error?: string
+		}>(),
 		scrapedAt: timestamp(),
 	},
 	t => [unique().on(t.userId, t.url)]
 )
+export type IPost = typeof Post.$inferSelect
+export type IPostWithProgress = IPost & {
+	scrapeProgress?: {
+		state: 'starting-browser' | 'navigating' | 'scraping' | 'done'
+	}
+}
 
 export const Tag = pgTable('tags', {
 	...defaultColumns,

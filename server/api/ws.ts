@@ -10,7 +10,7 @@ export interface DataChangedEvent {
 
 export type WebsocketEvent = DataChangedEvent
 
-class WsPeerTracker {
+class WsPeerManager {
 	peers: Peer[] = []
 	userMap: Map<string, Peer[]> = new Map()
 
@@ -23,15 +23,15 @@ class WsPeerTracker {
 	}
 
 	remove(peer: Peer) {
-		this._removePeerFrom(peer, this.peers)
+		this.#removePeerFrom(peer, this.peers)
 		const userPeers = this.userMap.get(peer.context.user as string)!
-		this._removePeerFrom(peer, userPeers)
+		this.#removePeerFrom(peer, userPeers)
 		if (userPeers.length === 0) {
 			this.userMap.delete(peer.context.user as string)
 		}
 	}
 
-	_removePeerFrom(peer: Peer, list: Peer[]) {
+	#removePeerFrom(peer: Peer, list: Peer[]) {
 		const index = list.indexOf(peer)
 		if (index !== -1) {
 			list.splice(index, 1)
@@ -50,7 +50,7 @@ class WsPeerTracker {
 	}
 }
 
-export const wsPeerTracker = new WsPeerTracker()
+export const wsPeerManager = new WsPeerManager()
 
 export default defineWebSocketHandler({
 	async open(peer) {
@@ -67,9 +67,9 @@ export default defineWebSocketHandler({
 			return
 		}
 
-		wsPeerTracker.add(peer, session.userId)
+		wsPeerManager.add(peer, session.userId)
 	},
 	close(peer) {
-		wsPeerTracker.remove(peer)
+		wsPeerManager.remove(peer)
 	},
 })
