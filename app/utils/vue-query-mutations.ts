@@ -2,6 +2,7 @@ export function useCreatePostMutation() {
 	const queryClient = useQueryClient()
 	return useMutation({
 		async mutationFn(post: { url: string }) {
+			if (!post.url) return
 			const res = await $fetch('/api/posts/create', {
 				method: 'POST',
 				body: {

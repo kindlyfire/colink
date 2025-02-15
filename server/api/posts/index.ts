@@ -4,7 +4,7 @@ import { Post } from '~~/server/db/schema'
 import { scrapingManager } from '~~/server/scraper/manager'
 
 export default defineEventHandler(async event => {
-	ensureRequestMethod(event, 'GET')
+	assertRequestMethod(event, 'GET')
 	const authData = await mustGetAuthData(event)
 
 	const posts = await db

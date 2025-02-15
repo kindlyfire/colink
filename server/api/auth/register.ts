@@ -10,7 +10,7 @@ const schema = z.object({
 })
 
 export default defineEventHandler(async event => {
-	ensureRequestMethod(event, 'POST')
+	assertRequestMethod(event, 'POST')
 
 	const runtimeConfig = useRuntimeConfig()
 	if (!runtimeConfig.registrationsEnabled) {

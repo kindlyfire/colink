@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm'
+import { eq, sql } from 'drizzle-orm'
 import { wsPeerManager } from '../api/ws'
 import { db } from '../db'
 import { IPost, IPostWithProgress, Post } from '../db/schema'
@@ -33,7 +33,14 @@ export class ScrapingManager {
 	}
 
 	async loadPending() {
-		// TODO
+		const posts = await db
+			.select()
+			.from(Post)
+			.where(sql`${Post.scrapeState}->>'pending' = 'true'`)
+
+		for (const post of posts) {
+			this.addToQueue(post)
+		}
 	}
 
 	async #scrape(post: IPost) {

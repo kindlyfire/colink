@@ -3,6 +3,7 @@
 		<div class="navbar invisible"></div>
 		<ul class="menu w-full bg-base-200 rounded-box grow overflow-y-auto flex-nowrap">
 			<li><a>All Posts</a></li>
+			<li><a>Tags</a></li>
 		</ul>
 	</div>
 	<div class="navbar bg-base-100 shadow-sm fixed">

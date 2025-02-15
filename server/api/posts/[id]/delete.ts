@@ -1,21 +1,21 @@
 import { and, eq } from 'drizzle-orm'
 import { db } from '~~/server/db'
 import { Post } from '~~/server/db/schema'
-import { scrapingManager } from '~~/server/scraper/manager'
+import { wsPeerManager } from '../../ws'
 
 export default defineEventHandler(async event => {
 	assertRequestMethod(event, 'POST')
 	const authData = await mustGetAuthData(event)
 
 	const [post] = await db
-		.select()
-		.from(Post)
+		.delete(Post)
 		.where(
-			and(eq(Post.userId, authData.user.id), eq(Post.id, getRouterParam(event, 'id') || ''))
+			and(eq(Post.id, getRouterParam(event, 'id') || ''), eq(Post.userId, authData.user.id))
 		)
+		.returning()
 	assertResource(post)
 
-	scrapingManager.addToQueue(post)
+	wsPeerManager.sendDataChangedEvent(authData.user.id)
 
-	return true
+	return post
 })

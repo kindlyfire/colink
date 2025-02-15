@@ -1,11 +1,11 @@
 import { z } from 'zod'
 import { db } from '~~/server/db'
 import { Post } from '~~/server/db/schema'
-import { wsPeerManager } from '../ws'
-import { scrapingManager } from '~~/server/scraper/manager'
+import { wsPeerManager } from '../../ws'
+import { and, eq } from 'drizzle-orm'
 
 const schema = z.object({
-	url: z.string().url(),
+	titleOverride: z.string().nullable(),
 })
 
 export default defineEventHandler(async event => {
@@ -14,21 +14,17 @@ export default defineEventHandler(async event => {
 	const body = await readValidatedBodyEx(event, schema)
 
 	const [post] = await db
-		.insert(Post)
-		.values({
-			userId: authData.user.id,
-			type: 'link',
-			html: '',
-			url: body.url,
-			title: '',
-			scrapeState: {
-				pending: true,
-			},
+		.update(Post)
+		.set({
+			titleOverride: body.titleOverride,
 		})
+		.where(
+			and(eq(Post.id, getRouterParam(event, 'id') || ''), eq(Post.userId, authData.user.id))
+		)
 		.returning()
+	assertResource(post)
 
 	wsPeerManager.sendDataChangedEvent(authData.user.id)
-	scrapingManager.addToQueue(post)
 
 	return post
 })

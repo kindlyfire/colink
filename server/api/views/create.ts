@@ -1,11 +1,14 @@
 import { z } from 'zod'
 import { db } from '~~/server/db'
-import { Post } from '~~/server/db/schema'
+import { View } from '~~/server/db/schema'
 import { wsPeerManager } from '../ws'
-import { scrapingManager } from '~~/server/scraper/manager'
 
 const schema = z.object({
-	url: z.string().url(),
+	filters: z
+		.object({
+			tagIds: z.array(z.string()),
+		})
+		.nullable(),
 })
 
 export default defineEventHandler(async event => {
@@ -13,22 +16,15 @@ export default defineEventHandler(async event => {
 	const authData = await mustGetAuthData(event)
 	const body = await readValidatedBodyEx(event, schema)
 
-	const [post] = await db
-		.insert(Post)
+	const [view] = await db
+		.insert(View)
 		.values({
 			userId: authData.user.id,
-			type: 'link',
-			html: '',
-			url: body.url,
-			title: '',
-			scrapeState: {
-				pending: true,
-			},
+			filters: body.filters,
 		})
 		.returning()
 
 	wsPeerManager.sendDataChangedEvent(authData.user.id)
-	scrapingManager.addToQueue(post)
 
-	return post
+	return view
 })
