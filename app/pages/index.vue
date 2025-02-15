@@ -14,34 +14,7 @@
 		</form>
 	</div>
 	<div class="mt-4">
-		<div class="card bg-base-200">
-			<table class="table">
-				<thead>
-					<tr>
-						<!-- <th>ID</th> -->
-						<th>Title</th>
-						<!-- <th>Type</th> -->
-						<th>URL</th>
-						<th>Created At</th>
-						<th></th>
-					</tr>
-				</thead>
-				<tbody>
-					<tr v-for="post in posts ?? []" :key="post.id">
-						<!-- <td>{{ post.id }}</td> -->
-						<td>{{ post.title }}</td>
-						<td>{{ post.url }}</td>
-						<td>{{ post.createdAt }}</td>
-						<td>{{ JSON.stringify(post.scrapeProgress || '"no progress"') }}</td>
-						<td>
-							<button class="btn" @click="mScrapePost.mutate({ id: post.id })">
-								Scrape
-							</button>
-						</td>
-					</tr>
-				</tbody>
-			</table>
-		</div>
+		<PostDisplay :filters="{}" />
 	</div>
 </template>
 
