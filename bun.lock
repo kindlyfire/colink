@@ -5,7 +5,6 @@
       "name": "nuxt-app",
       "dependencies": {
         "@ghostery/adblocker-puppeteer": "^2.5.0",
-        "@mozilla/readability": "^0.5.0",
         "@paralleldrive/cuid2": "^2.2.2",
         "@pinia/nuxt": "0.10.1",
         "@tanstack/vue-query": "^5.66.0",
@@ -188,8 +187,6 @@
     "@kwsites/promise-deferred": ["@kwsites/promise-deferred@1.1.1", "", {}, "sha512-GaHYm+c0O9MjZRu0ongGBRbinu8gVAMd2UZjji6jVmqKtZluZnptXGWhz1E8j8D2HJ3f/yMxKAUC0b+57wncIw=="],
 
     "@mapbox/node-pre-gyp": ["@mapbox/node-pre-gyp@1.0.11", "", { "dependencies": { "detect-libc": "^2.0.0", "https-proxy-agent": "^5.0.0", "make-dir": "^3.1.0", "node-fetch": "^2.6.7", "nopt": "^5.0.0", "npmlog": "^5.0.1", "rimraf": "^3.0.2", "semver": "^7.3.5", "tar": "^6.1.11" }, "bin": { "node-pre-gyp": "bin/node-pre-gyp" } }, "sha512-Yhlar6v9WQgUp/He7BdgzOz8lqMQ8sU+jkCq7Wx8Myc5YFJLbEe7lgui/V7G1qB1DJykHSGwreceSaD60Y0PUQ=="],
-
-    "@mozilla/readability": ["@mozilla/readability@0.5.0", "", {}, "sha512-Z+CZ3QaosfFaTqvhQsIktyGrjFjSC0Fa4EMph4mqKnWhmyoGICsV/8QK+8HpXut6zV7zwfWwqDmEjtk1Qf6EgQ=="],
 
     "@netlify/functions": ["@netlify/functions@2.8.2", "", { "dependencies": { "@netlify/serverless-functions-api": "1.26.1" } }, "sha512-DeoAQh8LuNPvBE4qsKlezjKj0PyXDryOFJfJKo3Z1qZLKzQ21sT314KQKPVjfvw6knqijj+IO+0kHXy/TJiqNA=="],
 

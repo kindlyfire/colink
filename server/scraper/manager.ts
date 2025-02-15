@@ -55,8 +55,10 @@ export class ScrapingManager {
 				scrapeState: null,
 				scrapedAt: new Date(),
 				title: res.title,
+				html: res.html,
 			}
 		} catch (e) {
+			console.error(e)
 			postUpdate = {
 				scrapeState: { error: '' + e },
 				scrapedAt: new Date(),

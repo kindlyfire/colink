@@ -23,8 +23,19 @@ export async function scrape({ post, setProgress }: ScrapeOptions) {
 		})
 
 		setProgress({ state: 'scraping' })
-		const title = await page.title()
-		return { title }
+		const res = await page.evaluate(() => {
+			return (async () => {
+				// TODO: Embed script in the codebase somewhere
+				const importUrl = 'https://esm.sh/@mozilla/readability@0.5.0'
+				const Readability = await import(importUrl)
+				const parsed = new Readability.Readability(eval(`document`)).parse()
+				return {
+					title: parsed.title as string,
+					html: parsed.content as string,
+				}
+			})()
+		})
+		return res
 	})
 }
 
@@ -33,6 +44,7 @@ async function runWithPage<T>(cb: (p: Page) => T) {
 	const page = await browser.newPage()
 	const blocker = await PuppeteerBlocker.fromPrebuiltAdsAndTracking(fetch)
 	await blocker.enableBlockingInPage(page)
+	await page.setBypassCSP(true)
 	const res = await cb(page)
 	await browser.close()
 	return res
