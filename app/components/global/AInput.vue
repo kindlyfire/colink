@@ -1,7 +1,7 @@
 <template>
 	<fieldset class="fieldset">
 		<legend v-if="label" class="fieldset-legend">{{ label }}</legend>
-		<label class="input">
+		<label class="input w-full">
 			<input v-if="type !== 'textarea'" class="" :type="type" v-bind="inputPropsBind" />
 			<textarea v-else class="" v-bind="inputPropsBind" />
 		</label>

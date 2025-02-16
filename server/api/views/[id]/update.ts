@@ -5,6 +5,7 @@ import { wsPeerManager } from '../../ws'
 import { and, eq } from 'drizzle-orm'
 
 const schema = z.object({
+	name: z.string().optional(),
 	filters: z
 		.object({
 			tagIds: z.array(z.string()),
@@ -20,6 +21,7 @@ export default defineEventHandler(async event => {
 	const [view] = await db
 		.update(View)
 		.set({
+			name: body.name,
 			filters: body.filters,
 		})
 		.where(

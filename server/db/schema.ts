@@ -83,6 +83,7 @@ export const View = pgTable('views', {
 	userId: text()
 		.notNull()
 		.references(() => User.id, { onDelete: 'cascade' }),
+	name: text().notNull(),
 	filters: jsonb().$type<null | { tagIds?: string[] }>(),
 })
 export type IView = typeof View.$inferSelect

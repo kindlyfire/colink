@@ -22,3 +22,14 @@ export function usePostQuery(id: MaybeRef<string>) {
 		},
 	})
 }
+
+export function useViewsQuery() {
+	const requestFetch = useRequestFetch()
+	return useQuery({
+		queryKey: ['views'],
+		async queryFn() {
+			const res = await requestFetch('/api/views')
+			return res
+		},
+	})
+}

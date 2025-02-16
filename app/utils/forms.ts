@@ -24,7 +24,7 @@ export function useForm<TSchema extends z.ZodTypeAny>(options: UseFormOptions<TS
 			.concat(newErrors ?? [])
 	}
 
-	function getInputProps(name: Path<z.input<TSchema>>) {
+	function getInputProps<T extends Path<z.input<TSchema>>>(name: T) {
 		const errors = computed(() => state.errors.filter(error => error.path.join('.') === name))
 		return {
 			modelValue: getByPath(state.values, name),

@@ -18,7 +18,7 @@
 						>
 							{{ getDomainName(post.url) }}
 						</a>
-						<NuxtLink :to="`/v/${post.id}`" class="btn btn-soft btn-sm ml-auto">
+						<NuxtLink :to="`/p/${post.id}`" class="btn btn-soft btn-sm ml-auto">
 							Open
 						</NuxtLink>
 						<div class="dropdown dropdown-end">

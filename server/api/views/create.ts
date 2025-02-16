@@ -4,6 +4,7 @@ import { View } from '~~/server/db/schema'
 import { wsPeerManager } from '../ws'
 
 const schema = z.object({
+	name: z.string(),
 	filters: z
 		.object({
 			tagIds: z.array(z.string()),
@@ -20,6 +21,7 @@ export default defineEventHandler(async event => {
 		.insert(View)
 		.values({
 			userId: authData.user.id,
+			name: body.name,
 			filters: body.filters,
 		})
 		.returning()
