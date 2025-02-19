@@ -11,9 +11,9 @@
 				<form @submit="form.onSubmit">
 					<AInput v-bind="form.getInputProps('name')" label="View Name" />
 					<div class="modal-action">
-						<form method="dialog">
-							<button class="btn btn-ghost" type="submit">Cancel</button>
-						</form>
+						<button class="btn btn-ghost" @click="$emit('update:open', false)">
+							Cancel
+						</button>
 						<button
 							v-if="view"
 							type="button"

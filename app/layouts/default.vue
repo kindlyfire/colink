@@ -1,15 +1,21 @@
 <template>
-	<div class="fixed top-0 left-0 bottom-0 w-[17rem] p-4 flex flex-col">
-		<div class="navbar invisible"></div>
-		<ul class="menu w-full bg-base-200 rounded-box grow overflow-y-auto flex-nowrap">
-			<li><NuxtLink to="/">All Posts</NuxtLink></li>
+	<ASidebar class="w-[17rem]">
+		<ul class="menu w-full">
+			<li>
+				<NuxtLink to="/" @click="viewsStore.setViewSelection({ type: 'all-posts' })">
+					All Posts
+				</NuxtLink>
+			</li>
 			<li><a>Tags</a></li>
-			<template v-if="views.data">
+			<template v-if="qViews.data">
 				<li>
 					<div class="menu-title pt-2">Views</div>
 				</li>
-				<li v-for="view in views.data.value" :key="view.id" class="relative">
-					<button class="flex items-center justify-between">
+				<li v-for="view in qViews.data.value" :key="view.id" class="relative">
+					<button
+						class="flex items-center justify-between"
+						@click="viewsStore.setViewSelection({ type: 'view', id: view.id })"
+					>
 						{{ view.name }}
 					</button>
 					<button
@@ -39,7 +45,7 @@
 				</li>
 			</template>
 		</ul>
-	</div>
+	</ASidebar>
 	<div class="navbar bg-base-100 shadow-sm fixed">
 		<div class="navbar-start">
 			<NuxtLink to="/" class="btn btn-ghost text-xl">Colink</NuxtLink>
@@ -87,9 +93,15 @@ import type { IView } from '~~/server/db/schema'
 
 const authData = useAuthData()
 const mLogout = useLogoutMutation()
-const views = useViewsQuery()
+const qViews = useViewsQuery()
 useWebsocket()
 
 const editViewModalOpen = ref(false)
 const editView = ref<SerializeObject<IView> | null>(null)
+
+if (import.meta.server) {
+	await qViews.suspense()
+}
+
+const viewsStore = useViewsStore()
 </script>

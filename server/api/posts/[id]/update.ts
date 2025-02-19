@@ -25,6 +25,7 @@ export default defineEventHandler(async event => {
 	assertResource(post)
 
 	wsPeerManager.sendDataChangedEvent(authData.user.id)
+	await indexingManager.index.post(post.id)
 
 	return post
 })

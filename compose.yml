@@ -7,3 +7,9 @@ services:
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
+  meilisearch:
+    image: getmeili/meilisearch:v1.13
+    ports:
+      - '127.0.0.1:7700:7700'
+    environment:
+      - MEILI_MASTER_KEY=masterkey

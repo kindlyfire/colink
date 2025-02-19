@@ -1,5 +1,6 @@
 import { boolean, jsonb, pgTable, text, timestamp, unique } from 'drizzle-orm/pg-core'
 import { createId } from '@paralleldrive/cuid2'
+import { relations } from 'drizzle-orm'
 
 const defaultColumns = {
 	id: text().primaryKey().$defaultFn(createId),
@@ -36,7 +37,8 @@ export const Post = pgTable(
 			.notNull()
 			.references(() => User.id, { onDelete: 'cascade' }),
 		type: text().notNull().$type<'link' | 'note'>(),
-		html: text().notNull(),
+		html: text(),
+		text: text(),
 		url: text(),
 		title: text().notNull(),
 		titleOverride: text(),

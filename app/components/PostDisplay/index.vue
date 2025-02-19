@@ -11,4 +11,8 @@ const props = defineProps<{
 }>()
 
 const qPosts = usePostsQuery(toRef(props, 'filters'))
+
+if (import.meta.server) {
+	await qPosts.suspense()
+}
 </script>

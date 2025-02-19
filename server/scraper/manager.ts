@@ -56,6 +56,7 @@ export class ScrapingManager {
 				scrapedAt: new Date(),
 				title: res.title,
 				html: res.html,
+				text: res.text,
 			}
 		} catch (e) {
 			console.error(e)
@@ -67,6 +68,7 @@ export class ScrapingManager {
 
 		await db.update(Post).set(postUpdate).where(eq(Post.id, post.id))
 		this.removeFromQueue(post)
+		await indexingManager.index.post(post.id)
 		wsPeerManager.sendDataChangedEvent(post.userId)
 	}
 

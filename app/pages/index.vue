@@ -14,6 +14,8 @@
 		</form>
 	</div>
 	<div class="mt-4">
+		{{ JSON.stringify(viewsStore.viewSelectionType) }}
+		{{ JSON.stringify(viewsStore.selectedView) }}
 		<PostDisplay :filters="{}" />
 	</div>
 </template>
@@ -31,12 +33,5 @@ async function onSubmit(e: Event) {
 	}
 }
 
-const qPosts = usePostsQuery()
-const posts = qPosts.data
-
-if (import.meta.server) {
-	await qPosts.suspense()
-}
-
-const mScrapePost = useScrapePostMutation()
+const viewsStore = useViewsStore()
 </script>

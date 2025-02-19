@@ -32,6 +32,7 @@ export async function scrape({ post, setProgress }: ScrapeOptions) {
 				return {
 					title: parsed.title as string,
 					html: parsed.content as string,
+					text: parsed.textContent as string,
 				}
 			})()
 		})

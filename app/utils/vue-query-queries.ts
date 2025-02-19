@@ -9,6 +9,7 @@ export function usePostsQuery(filters?: MaybeRef<IView['filters']>) {
 			const res = await requestFetch('/api/posts')
 			return res
 		},
+		placeholderData: [],
 	})
 }
 
@@ -31,5 +32,6 @@ export function useViewsQuery() {
 			const res = await requestFetch('/api/views')
 			return res
 		},
+		placeholderData: [],
 	})
 }
