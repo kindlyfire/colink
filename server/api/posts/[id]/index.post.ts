@@ -1,14 +1,22 @@
-import { and, eq } from 'drizzle-orm'
+import { z } from 'zod'
 import { db } from '~~/server/db'
 import { Post } from '~~/server/db/schema'
 import { wsPeerManager } from '../../ws'
+import { and, eq } from 'drizzle-orm'
+
+const schema = z.object({
+	titleOverride: z.string().nullable(),
+})
 
 export default defineEventHandler(async event => {
-	assertRequestMethod(event, 'POST')
 	const authData = await mustGetAuthData(event)
+	const body = await readValidatedBodyEx(event, schema)
 
 	const [post] = await db
-		.delete(Post)
+		.update(Post)
+		.set({
+			titleOverride: body.titleOverride,
+		})
 		.where(
 			and(eq(Post.id, getRouterParam(event, 'id') || ''), eq(Post.userId, authData.user.id))
 		)
@@ -16,7 +24,7 @@ export default defineEventHandler(async event => {
 	assertResource(post)
 
 	wsPeerManager.sendDataChangedEvent(authData.user.id)
-	await indexingManager.index.postDeleted(post.id)
+	await indexingManager.index.post(post.id)
 
 	return post
 })

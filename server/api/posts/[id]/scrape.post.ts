@@ -1,17 +1,20 @@
-import { desc, eq } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import { db } from '~~/server/db'
 import { Post } from '~~/server/db/schema'
 import { scrapingManager } from '~~/server/scraper/manager'
 
 export default defineEventHandler(async event => {
-	assertRequestMethod(event, 'GET')
 	const authData = await mustGetAuthData(event)
 
-	const posts = await db
+	const [post] = await db
 		.select()
 		.from(Post)
-		.where(eq(Post.userId, authData.user.id))
-		.orderBy(desc(Post.createdAt))
+		.where(
+			and(eq(Post.userId, authData.user.id), eq(Post.id, getRouterParam(event, 'id') || ''))
+		)
+	assertResource(post)
 
-	return posts.map(p => scrapingManager.augmentPost(p))
+	scrapingManager.addToQueue(post)
+
+	return true
 })

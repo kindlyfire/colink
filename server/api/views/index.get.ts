@@ -3,7 +3,6 @@ import { db } from '~~/server/db'
 import { View } from '~~/server/db/schema'
 
 export default defineEventHandler(async event => {
-	assertRequestMethod(event, 'GET')
 	const authData = await mustGetAuthData(event)
 
 	const views = await db

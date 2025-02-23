@@ -46,7 +46,7 @@
 			</template>
 		</ul>
 	</ASidebar>
-	<div class="navbar bg-base-100 shadow-sm fixed">
+	<div class="navbar bg-base-100 shadow-sm fixed z-50">
 		<div class="navbar-start">
 			<NuxtLink to="/" class="btn btn-ghost text-xl">Colink</NuxtLink>
 		</div>
@@ -91,6 +91,7 @@ import { useViewsQuery } from '~/utils/vue-query-queries'
 import EditViewModal from '~/components/EditViewModal/index.vue'
 import type { IView } from '~~/server/db/schema'
 
+const qAuthData = useAuthDataQuery()
 const authData = useAuthData()
 const mLogout = useLogoutMutation()
 const qViews = useViewsQuery()
@@ -100,7 +101,12 @@ const editViewModalOpen = ref(false)
 const editView = ref<SerializeObject<IView> | null>(null)
 
 if (import.meta.server) {
-	await qViews.suspense()
+	await qAuthData.suspense()
+	if (!authData.value) {
+		await navigateTo('/auth/login')
+	} else {
+		await qViews.suspense()
+	}
 }
 
 const viewsStore = useViewsStore()

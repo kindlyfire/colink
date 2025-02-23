@@ -29,12 +29,6 @@ export async function readValidatedBodyEx<T extends z.ZodType>(
 	return result.data
 }
 
-export function assertRequestMethod(event: H3Event, method: string) {
-	if (event.method !== method) {
-		throw createError({ statusCode: 405, message: 'Method Not Allowed' })
-	}
-}
-
 export function assertResource<T>(v: T): asserts v is NonNullable<T> {
 	if (v == null) {
 		throw createError({ statusCode: 404, message: 'Not Found' })

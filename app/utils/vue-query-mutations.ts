@@ -32,8 +32,8 @@ export function useDeletePostMutation() {
 	const queryClient = useQueryClient()
 	return useMutation({
 		async mutationFn(post: { id: string }) {
-			const res = await $fetch(`/api/posts/${post.id}/delete`, {
-				method: 'POST',
+			const res = await $fetch(`/api/posts/${post.id}`, {
+				method: 'DELETE',
 			})
 			queryClient.invalidateQueries()
 			return res
@@ -45,7 +45,7 @@ export function useUpdatePostMutation() {
 	const queryClient = useQueryClient()
 	return useMutation({
 		async mutationFn(post: { id: string; title: string; tags: string[] }) {
-			const res = await $fetch(`/api/posts/${post.id}/update`, {
+			const res = await $fetch(`/api/posts/${post.id}`, {
 				method: 'POST',
 				body: post,
 			})
@@ -59,7 +59,7 @@ export function useCreateViewMutation() {
 	const queryClient = useQueryClient()
 	return useMutation({
 		async mutationFn(view: { name: string; filters: { tagIds: string[] } }) {
-			const res = await $fetch('/api/views/create', {
+			const res = await $fetch('/api/views', {
 				method: 'POST',
 				body: view,
 			})
@@ -73,8 +73,8 @@ export function useDeleteViewMutation() {
 	const queryClient = useQueryClient()
 	return useMutation({
 		async mutationFn(view: { id: string }) {
-			const res = await $fetch(`/api/views/${view.id}/delete`, {
-				method: 'POST',
+			const res = await $fetch(`/api/views/${view.id}`, {
+				method: 'DELETE',
 			})
 			queryClient.invalidateQueries()
 			return res
@@ -86,7 +86,7 @@ export function useUpdateViewMutation() {
 	const queryClient = useQueryClient()
 	return useMutation({
 		async mutationFn(view: { id: string; name: string; filters: { tagIds: string[] } }) {
-			const res = await $fetch(`/api/views/${view.id}/update`, {
+			const res = await $fetch(`/api/views/${view.id}`, {
 				method: 'POST',
 				body: view,
 			})

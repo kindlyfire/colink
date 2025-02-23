@@ -4,7 +4,6 @@ import { Post, PostTag, Tag } from '~~/server/db/schema'
 import { wsPeerManager } from '../../ws'
 
 export default defineEventHandler(async event => {
-	assertRequestMethod(event, 'POST')
 	const authData = await mustGetAuthData(event)
 
 	const [tag] = await db

@@ -3,7 +3,6 @@ import { db } from '~~/server/db'
 import { Tag } from '~~/server/db/schema'
 
 export default defineEventHandler(async event => {
-	assertRequestMethod(event, 'GET')
 	const authData = await mustGetAuthData(event)
 
 	const tags = await db

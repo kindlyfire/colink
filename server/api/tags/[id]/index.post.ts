@@ -9,7 +9,6 @@ const schema = z.object({
 })
 
 export default defineEventHandler(async event => {
-	assertRequestMethod(event, 'POST')
 	const authData = await mustGetAuthData(event)
 	const body = await readValidatedBodyEx(event, schema)
 

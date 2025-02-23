@@ -1,21 +1,21 @@
 import { and, eq } from 'drizzle-orm'
 import { db } from '~~/server/db'
-import { View } from '~~/server/db/schema'
+import { Post } from '~~/server/db/schema'
 import { wsPeerManager } from '../../ws'
 
 export default defineEventHandler(async event => {
-	assertRequestMethod(event, 'POST')
 	const authData = await mustGetAuthData(event)
 
-	const [view] = await db
-		.delete(View)
+	const [post] = await db
+		.delete(Post)
 		.where(
-			and(eq(View.id, getRouterParam(event, 'id') || ''), eq(View.userId, authData.user.id))
+			and(eq(Post.id, getRouterParam(event, 'id') || ''), eq(Post.userId, authData.user.id))
 		)
 		.returning()
-	assertResource(view)
+	assertResource(post)
 
 	wsPeerManager.sendDataChangedEvent(authData.user.id)
+	await indexingManager.index.postDeleted(post.id)
 
-	return view
+	return post
 })

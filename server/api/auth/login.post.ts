@@ -11,7 +11,6 @@ const schema = z.object({
 })
 
 export default defineEventHandler(async event => {
-	assertRequestMethod(event, 'POST')
 	const body = await readValidatedBodyEx(event, schema)
 
 	const [user] = await db.select().from(User).where(eq(User.username, body.username))

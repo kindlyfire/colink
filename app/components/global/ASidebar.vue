@@ -1,6 +1,6 @@
 <template>
 	<div
-		class="fixed top-0 bottom-0 p-4 flex flex-col"
+		class="fixed top-0 bottom-0 p-4 flex flex-col z-40"
 		:class="props.side === 'left' ? 'left-0' : 'right-0'"
 	>
 		<div class="navbar invisible"></div>

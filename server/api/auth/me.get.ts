@@ -1,5 +1,4 @@
 export default defineEventHandler(async event => {
-	assertRequestMethod(event, 'GET')
 	const authData = await getAuthData(event)
 	if (!authData) {
 		throw createError({ statusCode: 401, message: 'Unauthorized' })

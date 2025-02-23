@@ -4,18 +4,15 @@ import { Post } from '~~/server/db/schema'
 import { scrapingManager } from '~~/server/scraper/manager'
 
 export default defineEventHandler(async event => {
-	assertRequestMethod(event, 'POST')
 	const authData = await mustGetAuthData(event)
 
 	const [post] = await db
 		.select()
 		.from(Post)
 		.where(
-			and(eq(Post.userId, authData.user.id), eq(Post.id, getRouterParam(event, 'id') || ''))
+			and(eq(Post.id, getRouterParam(event, 'id') || ''), eq(Post.userId, authData.user.id))
 		)
 	assertResource(post)
 
-	scrapingManager.addToQueue(post)
-
-	return true
+	return scrapingManager.augmentPost(post)
 })
