@@ -50,3 +50,15 @@ export function useViewsQuery() {
 		placeholderData: [],
 	})
 }
+
+export function useTagsQuery() {
+	const requestFetch = useRequestFetch()
+	return useQuery({
+		queryKey: ['tags'],
+		async queryFn() {
+			const res = await requestFetch('/api/tags')
+			return res
+		},
+		placeholderData: [],
+	})
+}

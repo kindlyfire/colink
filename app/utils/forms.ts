@@ -4,13 +4,15 @@ import { getByPath, setByPath, type Path } from './dot-path-value'
 
 interface UseFormOptions<TSchema extends z.ZodTypeAny> {
 	schema: TSchema
-	validateAsync?: (values: z.input<TSchema>, ctx: z.RefinementCtx) => Promise<any>
+	validateAsync?: (values: z.output<TSchema>, ctx: z.RefinementCtx) => Promise<any>
 	initialValues: z.input<TSchema>
 	onSubmit?: (values: z.output<TSchema>) => any
 	clone?: (values: z.input<TSchema>) => z.input<TSchema>
 }
 
 export function useForm<TSchema extends z.ZodTypeAny>(options: UseFormOptions<TSchema>) {
+	type TInput = z.input<TSchema>
+
 	const state = reactive({
 		values: options.clone ? options.clone(options.initialValues) : options.initialValues,
 		errors: [] as z.ZodIssue[],
@@ -24,7 +26,7 @@ export function useForm<TSchema extends z.ZodTypeAny>(options: UseFormOptions<TS
 			.concat(newErrors ?? [])
 	}
 
-	function getInputProps<T extends Path<z.input<TSchema>>>(name: T) {
+	function getInputProps<T extends Path<TInput>>(name: T) {
 		const errors = computed(() => state.errors.filter(error => error.path.join('.') === name))
 		return {
 			modelValue: getByPath(state.values, name),
@@ -50,11 +52,15 @@ export function useForm<TSchema extends z.ZodTypeAny>(options: UseFormOptions<TS
 			state.errors = result.error.errors
 			return
 		}
-		mutation.mutate()
+		mutation.mutate(result.data)
 	}
 
-	function setValues(values: z.input<TSchema>) {
+	function setValues(values: TInput) {
 		state.values = values
+	}
+
+	function setValue<T extends Path<TInput>>(name: T, value: TInput[T]) {
+		setByPath(state.values, name, value)
 	}
 
 	function setErrors(errors: z.ZodIssue[]) {
@@ -62,7 +68,7 @@ export function useForm<TSchema extends z.ZodTypeAny>(options: UseFormOptions<TS
 	}
 
 	const mutation = useMutation({
-		async mutationFn() {
+		async mutationFn(data: z.output<TSchema>) {
 			if (options.validateAsync) {
 				const result = await options.schema
 					.superRefine(options.validateAsync!)
@@ -73,7 +79,7 @@ export function useForm<TSchema extends z.ZodTypeAny>(options: UseFormOptions<TS
 					return
 				}
 			}
-			await options.onSubmit?.(state.values)
+			await options.onSubmit?.(data)
 		},
 	})
 
@@ -81,6 +87,7 @@ export function useForm<TSchema extends z.ZodTypeAny>(options: UseFormOptions<TS
 		values: toRef(state, 'values'),
 		errors: toRef(state, 'errors'),
 		setValues,
+		setValue,
 		getInputProps,
 		onSubmit,
 		setErrors,

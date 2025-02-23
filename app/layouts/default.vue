@@ -2,22 +2,42 @@
 	<ASidebar class="w-[17rem]">
 		<ul class="menu w-full">
 			<li>
-				<NuxtLink to="/" @click="viewsStore.setViewSelection({ type: 'all-posts' })">
+				<NuxtLink
+					to="/"
+					@click="viewsStore.setViewSelection({ type: 'all-posts' })"
+					:class="[
+						$router.currentRoute.value.path === '/' &&
+						viewsStore.viewSelectionType === 'all-posts'
+							? 'font-bold'
+							: '',
+					]"
+				>
 					All Posts
 				</NuxtLink>
 			</li>
-			<li><a>Tags</a></li>
+			<li><NuxtLink to="/tags" active-class="font-bold">Tags</NuxtLink></li>
 			<template v-if="qViews.data">
 				<li>
 					<div class="menu-title pt-2">Views</div>
 				</li>
 				<li v-for="view in qViews.data.value" :key="view.id" class="relative">
-					<button
+					<NuxtLink
+						to="/"
 						class="flex items-center justify-between"
-						@click="viewsStore.setViewSelection({ type: 'view', id: view.id })"
+						@click="
+							() => {
+								viewsStore.setViewSelection({ type: 'view', id: view.id })
+							}
+						"
+						:class="[
+							$router.currentRoute.value.path === '/' &&
+							viewsStore.selectedView?.id === view.id
+								? 'font-bold'
+								: '',
+						]"
 					>
 						{{ view.name }}
-					</button>
+					</NuxtLink>
 					<button
 						@click="
 							() => {

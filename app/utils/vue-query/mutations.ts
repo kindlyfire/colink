@@ -115,3 +115,44 @@ export function useUpdateViewMutation() {
 		},
 	})
 }
+
+export function useCreateTagMutation() {
+	const queryClient = useQueryClient()
+	return useMutation({
+		async mutationFn(tag: { name: string }) {
+			const res = await $fetch('/api/tags', {
+				method: 'POST',
+				body: tag,
+			})
+			queryClient.invalidateQueries()
+			return res
+		},
+	})
+}
+
+export function useUpdateTagMutation() {
+	const queryClient = useQueryClient()
+	return useMutation({
+		async mutationFn(tag: { id: string; name: string }) {
+			const res = await $fetch(`/api/tags/${tag.id}`, {
+				method: 'POST',
+				body: tag,
+			})
+			queryClient.invalidateQueries()
+			return res
+		},
+	})
+}
+
+export function useDeleteTagMutation() {
+	const queryClient = useQueryClient()
+	return useMutation({
+		async mutationFn(tag: { id: string }) {
+			const res = await $fetch(`/api/tags/${tag.id}`, {
+				method: 'DELETE',
+			})
+			queryClient.invalidateQueries()
+			return res
+		},
+	})
+}

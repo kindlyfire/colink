@@ -14,8 +14,6 @@
 		</form>
 	</div>
 	<div class="mt-4">
-		{{ JSON.stringify(viewsStore.viewSelectionType) }}
-		{{ JSON.stringify(viewsStore.selectedView) }}
 		<PostDisplay :filters="{}" />
 	</div>
 </template>

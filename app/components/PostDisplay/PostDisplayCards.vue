@@ -47,6 +47,14 @@
 										Refresh
 									</button>
 								</li>
+								<li>
+									<button
+										@click="deletePost(post.id)"
+										:disabled="!!post.scrapeProgress"
+									>
+										Delete
+									</button>
+								</li>
 							</ul>
 						</div>
 					</div>
@@ -66,4 +74,11 @@ const props = defineProps<{
 const getDomainName = (url: string) => new URL(url).hostname
 
 const mScrape = useScrapePostMutation()
+const mDeletePost = useDeletePostMutation()
+
+function deletePost(id: string) {
+	if (confirm('Are you sure you want to delete this post?')) {
+		mDeletePost.mutate({ id })
+	}
+}
 </script>
