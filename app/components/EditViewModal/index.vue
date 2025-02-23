@@ -19,9 +19,18 @@
 							type="button"
 							class="btn btn-error"
 							@click="handleDelete"
-							:disabled="deleteView.isPending.value"
+							:disabled="mDeleteView.isPending.value"
 						>
 							Delete
+						</button>
+						<button
+							v-if="view"
+							type="button"
+							class="btn btn-error"
+							@click="handleUpdateOrder"
+							:disabled="mUpdateViewOrder.isPending.value"
+						>
+							Reset order
 						</button>
 						<button
 							class="btn btn-primary"
@@ -54,9 +63,11 @@ const emit = defineEmits<{
 }>()
 
 const modal = ref<HTMLDialogElement>()
-const createView = useCreateViewMutation()
-const updateView = useUpdateViewMutation()
-const deleteView = useDeleteViewMutation()
+const mCreateView = useCreateViewMutation()
+const mUpdateView = useUpdateViewMutation()
+const mDeleteView = useDeleteViewMutation()
+const mUpdateViewOrder = useUpdateViewOrderMutation()
+const qViews = useViewsQuery()
 
 const initialValues = {
 	name: '',
@@ -74,12 +85,12 @@ const form = useForm({
 	initialValues: structuredClone(initialValues),
 	async onSubmit(values) {
 		if (props.view) {
-			await updateView.mutateAsync({
+			await mUpdateView.mutateAsync({
 				id: props.view.id,
 				...values,
 			})
 		} else {
-			await createView.mutateAsync(values)
+			await mCreateView.mutateAsync(values)
 		}
 		modal.value?.close()
 	},
@@ -87,7 +98,14 @@ const form = useForm({
 
 async function handleDelete() {
 	if (!props.view) return
-	await deleteView.mutateAsync({ id: props.view.id })
+	await mDeleteView.mutateAsync({ id: props.view.id })
+	modal.value?.close()
+}
+
+async function handleUpdateOrder() {
+	const views = qViews.data.value
+	if (!props.view || !views) return
+	await mUpdateViewOrder.mutateAsync(views.map(v => v.id))
 	modal.value?.close()
 }
 

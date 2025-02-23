@@ -1,4 +1,4 @@
-import { boolean, jsonb, pgTable, text, timestamp, unique } from 'drizzle-orm/pg-core'
+import { boolean, integer, jsonb, pgTable, text, timestamp, unique } from 'drizzle-orm/pg-core'
 import { createId } from '@paralleldrive/cuid2'
 import { relations } from 'drizzle-orm'
 
@@ -74,9 +74,6 @@ export const PostTag = pgTable('post_tags', {
 	tagId: text()
 		.notNull()
 		.references(() => Tag.id, { onDelete: 'cascade' }),
-	ai: boolean()
-		.notNull()
-		.$default(() => false),
 })
 export type IPostTag = typeof PostTag.$inferSelect
 
@@ -87,5 +84,6 @@ export const View = pgTable('views', {
 		.references(() => User.id, { onDelete: 'cascade' }),
 	name: text().notNull(),
 	filters: jsonb().$type<null | { tagIds?: string[] }>(),
+	order: integer().default(0),
 })
 export type IView = typeof View.$inferSelect

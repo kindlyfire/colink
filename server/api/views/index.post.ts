@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { db } from '~~/server/db'
 import { View } from '~~/server/db/schema'
 import { wsPeerManager } from '../ws'
+import { sql } from 'drizzle-orm'
 
 const schema = z.object({
 	name: z.string(),
@@ -22,6 +23,7 @@ export default defineEventHandler(async event => {
 			userId: authData.user.id,
 			name: body.name,
 			filters: body.filters,
+			order: sql`COALESCE((SELECT MAX("order") FROM "views" WHERE "userId" = ${authData.user.id}), 0) + 1`,
 		})
 		.returning()
 

@@ -1,4 +1,4 @@
-import { desc, eq } from 'drizzle-orm'
+import { asc, eq } from 'drizzle-orm'
 import { db } from '~~/server/db'
 import { View } from '~~/server/db/schema'
 
@@ -9,7 +9,7 @@ export default defineEventHandler(async event => {
 		.select()
 		.from(View)
 		.where(eq(View.userId, authData.user.id))
-		.orderBy(desc(View.createdAt))
+		.orderBy(asc(View.order))
 
 	return views
 })

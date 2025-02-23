@@ -93,7 +93,7 @@ export function useDeleteViewMutation() {
 	const queryClient = useQueryClient()
 	return useMutation({
 		async mutationFn(view: { id: string }) {
-			const res = await $fetch(`/api/views/${view.id}`, {
+			const res = await $fetch(`/api/views/${view.id}/delete`, {
 				method: 'DELETE',
 			})
 			queryClient.invalidateQueries()
@@ -109,6 +109,20 @@ export function useUpdateViewMutation() {
 			const res = await $fetch(`/api/views/${view.id}`, {
 				method: 'POST',
 				body: view,
+			})
+			queryClient.invalidateQueries()
+			return res
+		},
+	})
+}
+
+export function useUpdateViewOrderMutation() {
+	const queryClient = useQueryClient()
+	return useMutation({
+		async mutationFn(viewIds: string[]) {
+			const res = await $fetch('/api/views/order', {
+				method: 'POST',
+				body: { viewIds },
 			})
 			queryClient.invalidateQueries()
 			return res
