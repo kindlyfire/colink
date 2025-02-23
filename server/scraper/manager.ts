@@ -11,13 +11,17 @@ import { scrape } from './scraper'
 export class ScrapingManager {
 	posts: IPost[] = []
 	progress: Record<string, IPostWithProgress['scrapeProgress']> = {}
+	looping = false
 
 	addToQueue(post: IPost) {
 		if (!(post.id in this.progress)) {
 			this.posts.push(post)
+			this.#setProgress(post, {
+				state: 'waiting',
+			})
 		}
 
-		this.#scrape(post).catch(console.error)
+		this.scrapeLoop()
 	}
 
 	removeFromQueue(post: IPost) {
@@ -43,8 +47,24 @@ export class ScrapingManager {
 		}
 	}
 
+	async scrapeLoop() {
+		if (this.looping) return
+		this.looping = true
+
+		try {
+			while (this.posts.length > 0) {
+				const post = this.posts[0]
+				await this.#scrape(post)
+			}
+		} catch (e) {
+			console.error(e)
+		}
+
+		this.looping = false
+	}
+
 	async #scrape(post: IPost) {
-		let postUpdate = {} as Partial<IPost>
+		let postUpdate: Partial<IPost>
 
 		try {
 			const res = await scrape({
@@ -66,10 +86,13 @@ export class ScrapingManager {
 			}
 		}
 
-		await db.update(Post).set(postUpdate).where(eq(Post.id, post.id))
-		this.removeFromQueue(post)
-		await indexingManager.index.post(post.id)
-		wsPeerManager.sendDataChangedEvent(post.userId)
+		try {
+			await db.update(Post).set(postUpdate).where(eq(Post.id, post.id))
+			await indexingManager.index.post(post.id)
+			wsPeerManager.sendDataChangedEvent(post.userId)
+		} finally {
+			this.removeFromQueue(post)
+		}
 	}
 
 	#setProgress(post: IPost, progress: IPostWithProgress['scrapeProgress']) {

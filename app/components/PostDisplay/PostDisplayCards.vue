@@ -4,9 +4,6 @@
 			<div class="card-body">
 				<h2 class="card-title">
 					{{ post.titleOverride || post.title }}
-					<span v-if="post.scrapeProgress">
-						{{ post.scrapeProgress.state }}
-					</span>
 				</h2>
 				<div class="card-actions items-end grow">
 					<div class="flex items-center w-full gap-2">
@@ -14,11 +11,21 @@
 							v-if="post.url"
 							:href="post.url"
 							target="_blank"
-							class="overflow-ellipsis overflow-x-hidden"
+							class="overflow-ellipsis overflow-x-hidden mr-auto"
 						>
 							{{ getDomainName(post.url) }}
 						</a>
-						<NuxtLink :to="`/p/${post.id}`" class="btn btn-soft btn-sm ml-auto">
+						<div
+							class="flex items-center tooltip"
+							data-tip=""
+							v-if="post.scrapeProgress"
+						>
+							<div class="tooltip-content">
+								<div>{{ post.scrapeProgress.state }}</div>
+							</div>
+							<span class="loading loading-spinner loading-xs"></span>
+						</div>
+						<NuxtLink :to="`/p/${post.id}`" class="btn btn-soft btn-sm">
 							Open
 						</NuxtLink>
 						<div class="dropdown dropdown-end">

@@ -23,7 +23,7 @@ export function useCreatePostMutation() {
 	return useMutation({
 		async mutationFn(post: { url: string }) {
 			if (!post.url) return
-			const res = await $fetch('/api/posts/create', {
+			const res = await $fetch('/api/posts', {
 				method: 'POST',
 				body: {
 					url: post.url,

@@ -53,7 +53,7 @@ export const Post = pgTable(
 export type IPost = typeof Post.$inferSelect
 export type IPostWithProgress = IPost & {
 	scrapeProgress?: {
-		state: 'starting-browser' | 'navigating' | 'scraping' | 'done'
+		state: 'waiting' | 'starting-browser' | 'navigating' | 'scraping' | 'done'
 	}
 }
 

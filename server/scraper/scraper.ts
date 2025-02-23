@@ -1,10 +1,5 @@
-// - Actually scraping
-// - On startup, scraping what's pending/was interrupted
-// - A function to start a scrape
-
-import puppeteer, { Page } from 'puppeteer'
-import { PuppeteerBlocker } from '@ghostery/adblocker-puppeteer'
 import { IPost, IPostWithProgress } from '../db/schema'
+import { runWithPage } from './browser'
 
 interface ScrapeOptions {
 	post: IPost
@@ -38,15 +33,4 @@ export async function scrape({ post, setProgress }: ScrapeOptions) {
 		})
 		return res
 	})
-}
-
-async function runWithPage<T>(cb: (p: Page) => T) {
-	const browser = await puppeteer.launch()
-	const page = await browser.newPage()
-	const blocker = await PuppeteerBlocker.fromPrebuiltAdsAndTracking(fetch)
-	await blocker.enableBlockingInPage(page)
-	await page.setBypassCSP(true)
-	const res = await cb(page)
-	await browser.close()
-	return res
 }
