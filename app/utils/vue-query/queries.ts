@@ -1,5 +1,20 @@
 import type { IView } from '~~/server/db/schema'
 
+export function useAuthData() {
+	return useAuthDataQuery().data
+}
+
+export function useAuthDataQuery() {
+	const requestFetch = useRequestFetch()
+	return useQuery({
+		queryKey: ['auth-data'],
+		queryFn: async () => {
+			const res = await requestFetch('/api/auth/me')
+			return res
+		},
+	})
+}
+
 export function usePostsQuery(filters?: MaybeRef<IView['filters']>) {
 	const requestFetch = useRequestFetch()
 	return useQuery({

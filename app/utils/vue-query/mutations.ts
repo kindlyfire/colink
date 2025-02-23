@@ -1,3 +1,23 @@
+export function useLogoutMutation() {
+	const router = useRouter()
+	const queryClient = useQueryClient()
+	return useMutation({
+		async mutationFn(options?: { redirect?: boolean }) {
+			await $fetch('/api/auth/logout', {
+				method: 'POST',
+			})
+			queryClient.resetQueries({
+				queryKey: ['auth-data'],
+				exact: true,
+			})
+			if (options?.redirect ?? true) {
+				router.push('/auth/login')
+			}
+			return true
+		},
+	})
+}
+
 export function useCreatePostMutation() {
 	const queryClient = useQueryClient()
 	return useMutation({

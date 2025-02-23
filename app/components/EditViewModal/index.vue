@@ -42,11 +42,6 @@
 
 <script setup lang="ts">
 import { z } from 'zod'
-import {
-	useCreateViewMutation,
-	useUpdateViewMutation,
-	useDeleteViewMutation,
-} from '~/utils/vue-query-mutations'
 import type { IView } from '~~/server/db/schema'
 
 const props = defineProps<{

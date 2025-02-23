@@ -32,4 +32,7 @@ export default defineNuxtConfig({
 			websocket: true,
 		},
 	},
+	imports: {
+		dirs: ['utils', 'utils/vue-query'],
+	},
 })

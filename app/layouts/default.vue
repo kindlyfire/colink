@@ -87,7 +87,6 @@
 
 <script lang="ts" setup>
 import { useWebsocket } from '~/stores/ws'
-import { useViewsQuery } from '~/utils/vue-query-queries'
 import EditViewModal from '~/components/EditViewModal/index.vue'
 import type { IView } from '~~/server/db/schema'
 
