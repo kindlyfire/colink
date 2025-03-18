@@ -1,9 +1,11 @@
+use std::sync::Arc;
+
 use axum::{Json, Router, routing::get};
 use serde_json::Value;
 
-use super::AppError;
+use super::{AppError, AppState};
 
-pub(crate) fn get_router() -> Router {
+pub(crate) fn get_router() -> Router<Arc<AppState>> {
     Router::new()
         .route("/", get(get_posts).post(create_post))
         .route(
