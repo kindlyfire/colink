@@ -2,10 +2,15 @@ use std::{fmt::Display, sync::Arc};
 
 use axum::{
     Json, Router,
-    http::StatusCode,
+    extract::{FromRequestParts, State},
+    http::{StatusCode, request::Parts},
     response::{IntoResponse, Response},
 };
+use axum_extra::extract::CookieJar;
 use serde_json::{Value, json};
+use tracing::error;
+
+use crate::db::{models::users, repository::Repository};
 
 mod auth;
 mod links;
@@ -21,8 +26,10 @@ pub(crate) fn get_router(state: AppState) -> Router {
 
 #[derive(Debug, Clone)]
 pub struct AppState {
-    pub db: sea_orm::DatabaseConnection,
+    pub repo: Repository,
 }
+
+pub type ExtractAppState = State<Arc<AppState>>;
 
 #[derive(Debug, Clone)]
 pub struct AppError {
@@ -60,7 +67,14 @@ impl AppError {
 
 impl Display for AppError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "AppError: {} - {:?}", self.status_code, self.message)
+        write!(f, "AppError: {}", self.status_code)?;
+        if let Some(message) = &self.message {
+            write!(f, " - {}", message)?;
+        }
+        if let Some(body) = &self.body {
+            write!(f, " - {:?}", body)?;
+        }
+        Ok(())
     }
 }
 
@@ -86,15 +100,60 @@ where
     E: Into<anyhow::Error>,
 {
     fn from(err: E) -> Self {
-        let error: anyhow::Error = err.into();
+        let err: anyhow::Error = err.into();
 
-        match error.downcast::<AppError>() {
-            Ok(app_error) => app_error,
-            Err(error) => Self {
-                status_code: StatusCode::INTERNAL_SERVER_ERROR,
-                message: Some(format!("Something went wrong: {}", error)),
-                body: None,
-            },
+        match err.downcast::<AppError>() {
+            Ok(err) => err,
+            Err(err) => {
+                error!("Internal server error: {:?}", err);
+                Self {
+                    status_code: StatusCode::INTERNAL_SERVER_ERROR,
+                    message: Some(format!("Something went wrong: {}", err)),
+                    body: None,
+                }
+            }
         }
+    }
+}
+
+struct ExtractUser(pub users::Model);
+
+impl FromRequestParts<Arc<AppState>> for ExtractUser {
+    type Rejection = AppError;
+
+    async fn from_request_parts(
+        parts: &mut Parts,
+        state: &Arc<AppState>,
+    ) -> Result<Self, Self::Rejection> {
+        // Get the cookie jar from the request
+        let jar = CookieJar::from_request_parts(parts, &())
+            .await
+            .map_err(|_| AppError::new(StatusCode::UNAUTHORIZED, "Failed to extract cookies"))?;
+
+        // Check if session cookie exists
+        let session_token = jar
+            .get("colink_session")
+            .ok_or(AppError::new(
+                StatusCode::UNAUTHORIZED,
+                "Session cookie not found",
+            ))?
+            .value();
+
+        // Find the session
+        let session = state
+            .repo
+            .session_by_token(session_token)
+            .await?
+            .ok_or(AppError::new(StatusCode::UNAUTHORIZED, "Session not found"))?;
+
+        // Find the user
+        let user = state
+            .repo
+            .user_by_id(&session.user_id)
+            .await?
+            .ok_or(AppError::new(StatusCode::UNAUTHORIZED, "User not found"))?;
+
+        // Return the authenticated user
+        Ok(Self(user))
     }
 }

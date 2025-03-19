@@ -1,9 +1,5 @@
-use super::{AppError, AppState};
-use crate::db::{
-    IdType, create_id,
-    models::{sessions, users},
-    now_utc,
-};
+use super::{AppError, AppState, ExtractAppState};
+use crate::db::{IdType, models::sessions, now_utc};
 use axum::{
     Json, Router,
     extract::State,
@@ -11,10 +7,10 @@ use axum::{
     response::{IntoResponse, Response},
     routing::post,
 };
+use axum_extra::extract::CookieJar;
 use bcrypt::verify;
 use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, Set};
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
 use std::sync::Arc;
 use tracing::debug;
 
@@ -39,14 +35,14 @@ struct UserResponse {
 }
 
 async fn login(
-    State(state): State<Arc<AppState>>,
+    State(state): ExtractAppState,
     Json(payload): Json<LoginBody>,
 ) -> Result<Response, AppError> {
     debug!("Login request: {:?}", payload);
 
-    let user = users::Entity::find()
-        .filter(users::Column::Username.eq(&payload.username))
-        .one(&state.db)
+    let user = state
+        .repo
+        .user_by_username(&payload.username)
         .await?
         .ok_or(AppError::new(StatusCode::UNAUTHORIZED, "User not found"))?;
 
@@ -62,7 +58,7 @@ async fn login(
     // Save session to database
     let now = now_utc();
     let session = sessions::ActiveModel {
-        id: Set(create_id(IdType::Session)),
+        id: Set(IdType::Session.create()),
         created_at: Set(now.clone()),
         updated_at: Set(now.clone()),
         user_id: Set(user.id.clone()),
@@ -70,7 +66,7 @@ async fn login(
         last_seen: Set(now.clone()),
         label: Set(Some("Web Login".to_string())),
     };
-    let session = session.insert(&state.db).await?;
+    let session = session.insert(&state.repo.conn).await?;
 
     let response_body = UserResponse {
         id: user.id,
@@ -91,6 +87,27 @@ async fn login(
     Ok(response)
 }
 
-async fn logout() -> Result<Json<Value>, AppError> {
-    Err(anyhow::anyhow!("Not implemented.").into())
+// TODO: Make sure this can't be called using a form (check for
+// application/json? seems simplest)
+async fn logout(State(state): ExtractAppState, jar: CookieJar) -> Result<Response, AppError> {
+    let session_token = jar
+        .get("colink_session")
+        .map(|cookie| cookie.value().to_owned());
+
+    let mut response = (StatusCode::OK, "Logged out").into_response();
+
+    if let Some(token) = &session_token {
+        // Delete the session from the database
+        sessions::Entity::delete_many()
+            .filter(sessions::Column::Token.eq(token))
+            .exec(&state.repo.conn)
+            .await?;
+
+        let cookie = "colink_session=; Path=/; HttpOnly; SameSite=Strict; Expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        response
+            .headers_mut()
+            .insert(SET_COOKIE, HeaderValue::from_str(cookie).unwrap());
+    }
+
+    Ok(response)
 }

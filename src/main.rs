@@ -1,9 +1,9 @@
 use anyhow::{Result, anyhow};
 use bcrypt::{DEFAULT_COST, hash};
 use clap::{Parser, Subcommand};
-use db::{IdType, create_database, create_id, models::users, now_utc};
+use db::{IdType, models::users, now_utc, repository::Repository};
 use routes::AppState;
-use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, Set};
+use sea_orm::{ActiveModelTrait, Set};
 use std::env;
 use tokio::net::TcpListener;
 use tracing::{Level, info};
@@ -81,7 +81,7 @@ async fn main() -> Result<()> {
 }
 
 async fn cmd_serve(host: Option<String>, port: Option<u16>) -> Result<()> {
-    let db = create_database().await?;
+    let repo = Repository::new().await?;
 
     // Get host from flag, environment variable, or default
     let host = host
@@ -96,7 +96,7 @@ async fn cmd_serve(host: Option<String>, port: Option<u16>) -> Result<()> {
     let listener = TcpListener::bind(&format!("{}:{}", host, port))
         .await
         .expect("failed to bind address");
-    let router = routes::get_router(AppState { db });
+    let router = routes::get_router(AppState { repo });
 
     info!("listening on {}", listener.local_addr().unwrap());
     axum::serve(listener, router)
@@ -107,15 +107,12 @@ async fn cmd_serve(host: Option<String>, port: Option<u16>) -> Result<()> {
 }
 
 async fn cmd_users(command: UserCommand) -> Result<()> {
-    let db = create_database().await?;
+    let repo = Repository::new().await?;
 
     match command {
         UserCommand::Create { username, password } => {
             // Check if user already exists
-            let existing_user = users::Entity::find()
-                .filter(users::Column::Username.eq(&username))
-                .one(&db)
-                .await?;
+            let existing_user = repo.user_by_username(&username).await?;
             if existing_user.is_some() {
                 return Err(anyhow!("User already exists"));
             }
@@ -123,21 +120,20 @@ async fn cmd_users(command: UserCommand) -> Result<()> {
             // Create new user
             let now = now_utc();
             let user = users::ActiveModel {
-                id: Set(create_id(IdType::User)),
+                id: Set(IdType::User.create()),
                 username: Set(username),
                 password: Set(hash(password, DEFAULT_COST)?),
                 created_at: Set(now.clone()),
                 updated_at: Set(now),
             };
 
-            let user = user.insert(&db).await?;
+            let user = user.insert(&repo.conn).await?;
             info!("Created user: {:?}", user);
         }
         UserCommand::SetPassword { username, password } => {
             // Find the user
-            let user = users::Entity::find()
-                .filter(users::Column::Username.eq(&username))
-                .one(&db)
+            let user = repo
+                .user_by_username(&username)
                 .await?
                 .ok_or_else(|| anyhow!("User not found"))?;
 
@@ -145,7 +141,7 @@ async fn cmd_users(command: UserCommand) -> Result<()> {
             let mut user_model: users::ActiveModel = user.into();
             user_model.password = Set(hash(password, DEFAULT_COST)?);
             user_model.updated_at = Set(now_utc());
-            user_model.update(&db).await?;
+            user_model.update(&repo.conn).await?;
 
             info!("Updated password for user: {}", username);
         }

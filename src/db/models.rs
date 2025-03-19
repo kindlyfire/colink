@@ -1,9 +1,11 @@
 use sea_orm::entity::prelude::*;
+use serde::Serialize;
 
 pub mod users {
+
     use super::*;
 
-    #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel)]
+    #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel, Serialize)]
     #[sea_orm(table_name = "users")]
     pub struct Model {
         #[sea_orm(primary_key, auto_increment = false)]
@@ -12,6 +14,7 @@ pub mod users {
         pub updated_at: String,
         #[sea_orm(unique)]
         pub username: String,
+        #[serde(skip_serializing)]
         pub password: String,
     }
 
