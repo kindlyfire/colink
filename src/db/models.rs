@@ -52,7 +52,7 @@ pub mod users {
 pub mod sessions {
     use super::*;
 
-    #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel)]
+    #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel, Serialize)]
     #[sea_orm(table_name = "sessions")]
     pub struct Model {
         #[sea_orm(primary_key, auto_increment = false)]
@@ -88,7 +88,7 @@ pub mod sessions {
 pub mod posts {
     use super::*;
 
-    #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel)]
+    #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel, Serialize)]
     #[sea_orm(table_name = "posts")]
     pub struct Model {
         #[sea_orm(primary_key, auto_increment = false)]
@@ -129,7 +129,7 @@ pub mod posts {
 pub mod links {
     use super::*;
 
-    #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel)]
+    #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel, Serialize)]
     #[sea_orm(table_name = "links")]
     pub struct Model {
         #[sea_orm(primary_key, auto_increment = false)]
@@ -176,7 +176,7 @@ pub mod links {
 pub mod post_links {
     use super::*;
 
-    #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel)]
+    #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel, Serialize)]
     #[sea_orm(table_name = "post_links")]
     pub struct Model {
         #[sea_orm(primary_key, auto_increment = false)]

@@ -3,7 +3,7 @@ use sea_orm::{ColumnTrait, ConnectionTrait, EntityTrait, QueryFilter};
 
 use super::{
     migrate::migrate_database,
-    models::{sessions, users},
+    models::{posts, sessions, users},
 };
 
 #[derive(Clone, Debug)]
@@ -36,6 +36,19 @@ impl Repository {
             .one(&self.conn)
             .await?;
         Ok(session)
+    }
+
+    pub async fn user_post_by_id(
+        &self,
+        post_id: &str,
+        user_id: &str,
+    ) -> Result<Option<posts::Model>> {
+        let post = posts::Entity::find()
+            .filter(posts::Column::Id.eq(post_id))
+            .filter(posts::Column::UserId.eq(user_id))
+            .one(&self.conn)
+            .await?;
+        Ok(post)
     }
 }
 

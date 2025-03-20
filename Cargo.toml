@@ -6,6 +6,8 @@ edition = "2024"
 [dependencies]
 anyhow = "1.0.97"
 axum = "0.8.1"
+axum-extra = { version = "0.10.0", features = ["cookie"] }
+axum-test = "17.2.0"
 bcrypt = "0.17.0"
 clap = { version = "4.5.31", features = ["derive"] }
 console = "0.15.11"

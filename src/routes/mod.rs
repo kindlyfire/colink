@@ -125,12 +125,12 @@ impl FromRequestParts<Arc<AppState>> for ExtractUser {
         parts: &mut Parts,
         state: &Arc<AppState>,
     ) -> Result<Self, Self::Rejection> {
-        // Get the cookie jar from the request
+        // Get the cookie jar
         let jar = CookieJar::from_request_parts(parts, &())
             .await
             .map_err(|_| AppError::new(StatusCode::UNAUTHORIZED, "Failed to extract cookies"))?;
 
-        // Check if session cookie exists
+        // Get session cookie
         let session_token = jar
             .get("colink_session")
             .ok_or(AppError::new(
