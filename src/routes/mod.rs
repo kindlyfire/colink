@@ -11,11 +11,15 @@ use serde_json::{Value, json};
 use tower_http::cors::{AllowHeaders, AllowMethods, AllowOrigin, CorsLayer};
 use tracing::error;
 
-use crate::db::{models::users, repository::Repository};
+use crate::{
+    db::{models::users, repository::Repository},
+    search::Search,
+};
 
 mod auth;
 mod links;
 mod posts;
+mod spa;
 
 pub(crate) fn get_router(state: AppState) -> Router {
     let cors = CorsLayer::new()
@@ -28,9 +32,10 @@ pub(crate) fn get_router(state: AppState) -> Router {
         .max_age(Duration::from_secs(3600 * 24 * 7));
 
     Router::new()
-        .nest("/auth", auth::get_router())
-        .nest("/links", links::get_router())
-        .nest("/posts", posts::get_router())
+        .nest("/api/auth", auth::get_router())
+        .nest("/api/links", links::get_router())
+        .nest("/api/posts", posts::get_router())
+        .merge(spa::get_router())
         .layer(cors)
         .with_state(Arc::new(state))
 }
@@ -38,6 +43,7 @@ pub(crate) fn get_router(state: AppState) -> Router {
 #[derive(Debug, Clone)]
 pub struct AppState {
     pub repo: Repository,
+    pub search: Option<Search>,
 }
 
 pub type ExtractAppState = State<Arc<AppState>>;

@@ -554,6 +554,7 @@ dependencies = [
  "cuid2",
  "jiff",
  "meilisearch-sdk",
+ "mime_guess",
  "rust-embed",
  "sea-orm",
  "serde",

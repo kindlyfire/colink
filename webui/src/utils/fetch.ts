@@ -1,4 +1,4 @@
-const baseUrl = import.meta.env.VITE_API_URL || ''
+const baseUrl = import.meta.env.VITE_API_URL || '/api'
 export function fetchApi<T = any>(path: string, init?: RequestInit) {
 	return fetchEx<T>(`${baseUrl}${path}`, {
 		credentials: 'include',
@@ -18,7 +18,7 @@ export function fetchApi<T = any>(path: string, init?: RequestInit) {
  */
 export function fetchEx<T = any>(input: string, init?: RequestInit) {
 	return FetchPromise.resolve(
-		fetch(new URL(input), init).then(async res => {
+		fetch(input, init).then(async res => {
 			if (!res.ok) {
 				throw new RequestError(res, await res.text().catch(() => null))
 			}

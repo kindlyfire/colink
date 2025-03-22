@@ -4,6 +4,7 @@ use clap::{Parser, Subcommand};
 use db::{IdType, models::users, now_utc, repository::Repository};
 use routes::AppState;
 use sea_orm::{ActiveModelTrait, Set};
+use search::Search;
 use std::env;
 use tokio::net::TcpListener;
 use tracing::{Level, info};
@@ -11,6 +12,7 @@ use tracing_subscriber::FmtSubscriber;
 
 mod db;
 mod routes;
+mod search;
 
 #[cfg(test)]
 mod tests;
@@ -84,8 +86,6 @@ async fn main() -> Result<()> {
 }
 
 async fn cmd_serve(host: Option<String>, port: Option<u16>) -> Result<()> {
-    let repo = Repository::new().await?;
-
     // Get host from flag, environment variable, or default
     let host = host
         .or_else(|| env::var("HOST").ok())
@@ -96,10 +96,16 @@ async fn cmd_serve(host: Option<String>, port: Option<u16>) -> Result<()> {
         .or_else(|| env::var("PORT").ok().and_then(|p| p.parse().ok()))
         .unwrap_or(3000);
 
+    let repo = Repository::new().await?;
+    let search = Search::new().await?;
+
     let listener = TcpListener::bind(&format!("{}:{}", host, port))
         .await
         .expect("failed to bind address");
-    let router = routes::get_router(AppState { repo });
+    let router = routes::get_router(AppState {
+        repo,
+        search: Some(search),
+    });
 
     info!("listening on {}", listener.local_addr().unwrap());
     axum::serve(listener, router)

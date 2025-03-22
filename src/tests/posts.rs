@@ -15,7 +15,10 @@ use crate::{
 
 async fn setup_test_server() -> (TestServer, Repository) {
     let repo = Repository::new().await.unwrap();
-    let app_state = AppState { repo: repo.clone() };
+    let app_state = AppState {
+        repo: repo.clone(),
+        search: None,
+    };
     let app = get_router(app_state);
     let server = TestServer::new(app).unwrap();
     (server, repo)
@@ -42,7 +45,7 @@ async fn test_post_endpoints() {
 
     let test_user = create_test_user(&repo, "testuser", "password123").await;
     let login_response = server
-        .post("/auth/login")
+        .post("/api/auth/login")
         .json(&json!({
             "username": "testuser",
             "password": "password123"
@@ -56,7 +59,7 @@ async fn test_post_endpoints() {
 
     // Check there's no posts
     let get_posts_response = server
-        .get("/posts")
+        .get("/api/posts")
         .add_cookie(session_cookie.clone())
         .await;
     get_posts_response.assert_status_ok();
@@ -66,7 +69,7 @@ async fn test_post_endpoints() {
 
     // Create a post
     let create_post_response = server
-        .post("/posts")
+        .post("/api/posts")
         .add_cookie(session_cookie.clone())
         .json(&json!({
             "text": "This is a test post"
@@ -81,7 +84,7 @@ async fn test_post_endpoints() {
 
     // Check posts again
     let get_posts_response = server
-        .get("/posts")
+        .get("/api/posts")
         .add_cookie(session_cookie.clone())
         .await;
     get_posts_response.assert_status_ok();
@@ -94,7 +97,7 @@ async fn test_post_endpoints() {
 
     // Update the post
     let update_post_response = server
-        .post(&format!("/posts/{}", post_id))
+        .post(&format!("/api/posts/{}", post_id))
         .add_cookie(session_cookie.clone())
         .json(&json!({
             "text": "This is an updated post"
@@ -108,7 +111,7 @@ async fn test_post_endpoints() {
 
     // Get post by ID and verify update
     let get_post_response = server
-        .get(&format!("/posts/{}", post_id))
+        .get(&format!("/api/posts/{}", post_id))
         .add_cookie(session_cookie.clone())
         .await;
     get_post_response.assert_status_ok();
@@ -119,7 +122,7 @@ async fn test_post_endpoints() {
 
     // Delete the post
     let delete_post_response = server
-        .delete(&format!("/posts/{}", post_id))
+        .delete(&format!("/api/posts/{}", post_id))
         .add_cookie(session_cookie.clone())
         .await;
     delete_post_response.assert_status_ok();
@@ -128,7 +131,7 @@ async fn test_post_endpoints() {
 
     // Verify post was deleted by checking posts list is empty
     let get_posts_response = server
-        .get("/posts")
+        .get("/api/posts")
         .add_cookie(session_cookie.clone())
         .await;
     get_posts_response.assert_status_ok();
