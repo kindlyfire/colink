@@ -1,11 +1,11 @@
-use super::{AppError, AppState, ExtractAppState};
+use super::{AppError, AppState, ExtractAppState, ExtractUser};
 use crate::db::{IdType, models::sessions, now_utc};
 use axum::{
     Json, Router,
     extract::State,
     http::{HeaderValue, StatusCode, header::SET_COOKIE},
     response::{IntoResponse, Response},
-    routing::post,
+    routing::{get, post},
 };
 use axum_extra::extract::CookieJar;
 use bcrypt::verify;
@@ -18,6 +18,7 @@ pub(crate) fn get_router() -> Router<Arc<AppState>> {
     Router::new()
         .route("/login", post(login))
         .route("/logout", post(logout))
+        .route("/me", get(me))
 }
 
 #[derive(Deserialize, Debug)]
@@ -110,4 +111,15 @@ async fn logout(State(state): ExtractAppState, jar: CookieJar) -> Result<Respons
     }
 
     Ok(response)
+}
+
+async fn me(ExtractUser(user): ExtractUser) -> Result<Json<UserResponse>, AppError> {
+    let user_response = UserResponse {
+        id: user.id,
+        username: user.username,
+        created_at: user.created_at,
+        updated_at: user.updated_at,
+    };
+
+    Ok(Json(user_response))
 }

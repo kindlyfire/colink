@@ -1,13 +1,14 @@
-use std::{fmt::Display, sync::Arc};
+use std::{fmt::Display, sync::Arc, time::Duration};
 
 use axum::{
     Json, Router,
     extract::{FromRequestParts, State},
-    http::{StatusCode, request::Parts},
+    http::{HeaderValue, StatusCode, request::Parts},
     response::{IntoResponse, Response},
 };
 use axum_extra::extract::CookieJar;
 use serde_json::{Value, json};
+use tower_http::cors::{AllowHeaders, AllowMethods, AllowOrigin, CorsLayer};
 use tracing::error;
 
 use crate::db::{models::users, repository::Repository};
@@ -17,10 +18,20 @@ mod links;
 mod posts;
 
 pub(crate) fn get_router(state: AppState) -> Router {
+    let cors = CorsLayer::new()
+        .allow_methods(AllowMethods::mirror_request())
+        .allow_origin(AllowOrigin::list(vec![HeaderValue::from_static(
+            "http://localhost:5173",
+        )]))
+        .allow_credentials(true)
+        .allow_headers(AllowHeaders::mirror_request())
+        .max_age(Duration::from_secs(3600 * 24 * 7));
+
     Router::new()
         .nest("/auth", auth::get_router())
         .nest("/links", links::get_router())
         .nest("/posts", posts::get_router())
+        .layer(cors)
         .with_state(Arc::new(state))
 }
 
