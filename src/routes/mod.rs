@@ -46,6 +46,12 @@ pub struct AppState {
     pub search: Option<Search>,
 }
 
+impl AppState {
+    pub fn get_search(&self) -> Option<&Search> {
+        self.search.as_ref()
+    }
+}
+
 pub type ExtractAppState = State<Arc<AppState>>;
 
 #[derive(Debug, Clone)]

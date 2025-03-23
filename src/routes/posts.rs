@@ -14,7 +14,10 @@ use serde::Deserialize;
 use serde_json::{Value, json};
 
 use super::{AppError, AppState, ExtractAppState, ExtractUser};
-use crate::db::{IdType, models::posts, now_utc};
+use crate::{
+    db::{IdType, models::posts, now_utc},
+    search::Post,
+};
 
 #[derive(Deserialize)]
 struct CreatePostRequest {
@@ -56,11 +59,21 @@ async fn create_post(
         id: Set(IdType::Post.create()),
         created_at: Set(now.clone()),
         updated_at: Set(now),
-        user_id: Set(user.id),
+        user_id: Set(user.id.clone()),
         text: Set(payload.text),
     };
 
     let post = post.insert(&state.repo.conn).await?;
+
+    if let Some(search) = state.get_search() {
+        search
+            .post_upsert(Post {
+                id: post.id.clone(),
+                user_id: user.id.clone(),
+                text: post.text.clone(),
+            })
+            .await?;
+    }
 
     Ok(Json(json!({ "data": post })))
 }
@@ -102,6 +115,16 @@ async fn update_post_by_id(
 
     let post = post.update(&state.repo.conn).await?;
 
+    if let Some(search) = state.get_search() {
+        search
+            .post_upsert(Post {
+                id: post.id.clone(),
+                user_id: user.id.clone(),
+                text: post.text.clone(),
+            })
+            .await?;
+    }
+
     Ok(Json(json!({ "data": post })))
 }
 
@@ -115,7 +138,12 @@ async fn delete_post_by_id(
         .user_post_by_id(&id, &user.id)
         .await?
         .ok_or_else(|| AppError::new(StatusCode::NOT_FOUND, "Post not found"))?;
+    let post_id = post.id.clone();
     post.delete(&state.repo.conn).await?;
+
+    if let Some(search) = state.get_search() {
+        search.post_delete(&post_id).await?;
+    }
 
     Ok(Json(json!({ "success": true })))
 }

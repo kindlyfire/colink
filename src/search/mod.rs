@@ -5,10 +5,10 @@ use meilisearch_sdk::{client::Client, settings::Settings};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug)]
-struct Post {
-    id: String,
-    text: String,
-    user_id: String,
+pub struct Post {
+    pub id: String,
+    pub text: String,
+    pub user_id: String,
 }
 
 #[derive(Debug, Clone)]
@@ -32,5 +32,27 @@ impl Search {
             .await?;
 
         Ok(Self { client })
+    }
+
+    /// Insert or update a post in the search index
+    pub async fn post_upsert(&self, post: Post) -> Result<()> {
+        let posts_index = self.client.index("posts");
+        posts_index
+            .add_documents(&[post], Some("id"))
+            .await?
+            .wait_for_completion(&self.client, None, Some(Duration::from_secs(60)))
+            .await?;
+        Ok(())
+    }
+
+    /// Delete a post from the search index by ID
+    pub async fn post_delete(&self, post_id: &str) -> Result<()> {
+        let posts_index = self.client.index("posts");
+        posts_index
+            .delete_document(post_id)
+            .await?
+            .wait_for_completion(&self.client, None, Some(Duration::from_secs(60)))
+            .await?;
+        Ok(())
     }
 }

@@ -39,9 +39,9 @@ async fn serve_spa(uri: Uri) -> Result<impl IntoResponse, AppError> {
     // accessing actual filesystem files, only embedded ones.
     let path = uri.path().trim_start_matches('/');
     let path_index = format!("{}index.html", path);
-    let paths = vec![path, &path_index, "index.html"];
+    let try_paths = vec![path, &path_index, "index.html"];
 
-    for path in paths {
+    for path in try_paths {
         if let Some(response) = try_file(path) {
             return Ok(response);
         }
