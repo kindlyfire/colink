@@ -55,4 +55,29 @@ impl Search {
             .await?;
         Ok(())
     }
+
+    /// Search for posts with optional user filtering
+    ///
+    /// * `query` - The search text to query for
+    /// * `user_id` - Optional user ID to filter results by
+    pub async fn post_search(&self, query: &str, user_id: Option<&str>) -> Result<Vec<Post>> {
+        let posts_index = self.client.index("posts");
+        let mut search_query = posts_index.search();
+
+        // Set the query text
+        search_query.with_query(query);
+
+        let filter = user_id.map(|uid| format!("user_id = \"{}\"", uid));
+        if let Some(filter) = filter.as_ref() {
+            search_query.with_filter(filter);
+        }
+
+        let search_results = search_query.execute().await?;
+
+        Ok(search_results
+            .hits
+            .into_iter()
+            .map(|hit| hit.result)
+            .collect())
+    }
 }

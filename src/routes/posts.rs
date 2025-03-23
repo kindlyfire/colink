@@ -2,13 +2,13 @@ use std::sync::Arc;
 
 use axum::{
     Json, Router,
-    extract::{Path, State},
+    extract::{Path, Query, State},
     http::StatusCode,
     routing::get,
 };
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, EntityTrait, IntoActiveModel, ModelTrait, QueryFilter,
-    QueryOrder, Set,
+    QueryOrder, QuerySelect, Set,
 };
 use serde::Deserialize;
 use serde_json::{Value, json};
@@ -27,6 +27,7 @@ struct CreatePostRequest {
 pub(crate) fn get_router() -> Router<Arc<AppState>> {
     Router::new()
         .route("/", get(get_posts).post(create_post))
+        .route("/search", get(get_posts_search))
         .route(
             "/{id}",
             get(get_post_by_id)
@@ -35,17 +36,59 @@ pub(crate) fn get_router() -> Router<Arc<AppState>> {
         )
 }
 
+#[derive(Deserialize)]
+struct GetPostsParams {
+    limit: Option<u64>,
+    offset: Option<u64>,
+}
+
 async fn get_posts(
     State(state): ExtractAppState,
     ExtractUser(user): ExtractUser,
+    Query(params): Query<GetPostsParams>,
 ) -> Result<Json<Value>, AppError> {
+    let limit = params.limit.unwrap_or(10).clamp(1, 500);
+    let offset = params.offset.unwrap_or(0);
+
     let posts = posts::Entity::find()
         .filter(posts::Column::UserId.eq(user.id.clone()))
         .order_by_desc(posts::Column::CreatedAt)
+        .limit(limit)
+        .offset(offset)
         .all(&state.repo.conn)
         .await?;
 
-    Ok(Json(json!({ "data": posts })))
+    Ok(Json(json!({
+        "data": posts
+    })))
+}
+
+#[derive(Deserialize)]
+struct SearchPostsParams {
+    query: String,
+}
+
+async fn get_posts_search(
+    State(state): ExtractAppState,
+    ExtractUser(user): ExtractUser,
+    Query(params): Query<SearchPostsParams>,
+) -> Result<Json<Value>, AppError> {
+    if state.get_search().is_none() {
+        return Err(AppError::new(
+            StatusCode::SERVICE_UNAVAILABLE,
+            "Search service not available",
+        ));
+    }
+
+    let search = state.get_search().unwrap();
+    let posts = search
+        .post_search(&params.query, Some(&user.id))
+        .await
+        .map_err(|err| AppError::new(StatusCode::SERVICE_UNAVAILABLE, err.to_string()))?;
+
+    Ok(Json(json!({
+        "data": posts
+    })))
 }
 
 async fn create_post(
