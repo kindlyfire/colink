@@ -1,61 +1,12 @@
-use axum_test::TestServer;
-use bcrypt::hash;
-use sea_orm::{ActiveModelTrait, Set};
 use serde_json::{Value, json};
 
-use crate::{
-    db::{
-        IdType,
-        models::{self, users},
-        now_utc,
-        repository::Repository,
-    },
-    routes::{AppState, get_router},
-};
-
-async fn setup_test_server() -> (TestServer, Repository) {
-    let repo = Repository::new().await.unwrap();
-    let app_state = AppState {
-        repo: repo.clone(),
-        search: None,
-    };
-    let app = get_router(app_state);
-    let server = TestServer::new(app).unwrap();
-    (server, repo)
-}
-
-async fn create_test_user(repo: &Repository, username: &str, password: &str) -> users::Model {
-    let hashed_password = hash(password, 4).unwrap();
-    let now = now_utc();
-
-    let user = models::users::ActiveModel {
-        id: Set(IdType::User.create()),
-        created_at: Set(now.clone()),
-        updated_at: Set(now),
-        username: Set(username.to_string()),
-        password: Set(hashed_password),
-    };
-
-    user.insert(&repo.conn).await.unwrap()
-}
+use crate::tests::{auth::create_test_user_and_login, setup_test_server};
 
 #[tokio::test]
 async fn test_post_endpoints() {
-    let (server, repo) = setup_test_server().await;
-
-    let test_user = create_test_user(&repo, "testuser", "password123").await;
-    let login_response = server
-        .post("/api/auth/login")
-        .json(&json!({
-            "username": "testuser",
-            "password": "password123"
-        }))
-        .await;
-    login_response.assert_status_ok();
-
-    // Extract the session cookie
-    let cookies = login_response.cookies();
-    let session_cookie = cookies.get("colink_session").unwrap();
+    let (repo, server) = setup_test_server().await;
+    let (test_user, session_cookie) =
+        create_test_user_and_login(&repo, &server, "testuser", "password123").await;
 
     // Check there's no posts
     let get_posts_response = server
