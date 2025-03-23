@@ -182,3 +182,63 @@ async fn test_posts_search() {
         .add_cookie(session_cookie.clone())
         .await;
 }
+
+#[tokio::test]
+async fn test_post_links() {
+    let (repo, server) = setup_test_server().await;
+    let (_, session_cookie) =
+        create_test_user_and_login(&repo, &server, "testuser", "password123").await;
+
+    // Create a post with two links
+    let post_text = "Check out these sites: https://example.com and https://test.org";
+    let create_post_response = server
+        .post("/api/posts")
+        .add_cookie(session_cookie.clone())
+        .json(&json!({
+            "text": post_text
+        }))
+        .await;
+    create_post_response.assert_status_ok();
+    let body: Value = create_post_response.json();
+    let post = &body["data"];
+    let post_id = post["id"].as_str().unwrap();
+
+    // Verify both links were extracted and stored in the database
+    let links = repo.links_by_post_id(post_id).await.unwrap();
+    assert_eq!(links.len(), 2);
+
+    // Create a set of URLs for easier comparison
+    let link_urls: std::collections::HashSet<String> =
+        links.iter().map(|link| link.url.clone()).collect();
+
+    assert!(link_urls.contains("https://example.com"));
+    assert!(link_urls.contains("https://test.org"));
+
+    // Update the post to replace one link with a different one
+    let updated_post_text = "Check out these sites: https://example.com and https://newsite.com";
+    let update_post_response = server
+        .post(&format!("/api/posts/{}", post_id))
+        .add_cookie(session_cookie.clone())
+        .json(&json!({
+            "text": updated_post_text
+        }))
+        .await;
+    update_post_response.assert_status_ok();
+
+    // Verify links were updated correctly
+    let updated_links = repo.links_by_post_id(post_id).await.unwrap();
+    assert_eq!(updated_links.len(), 2);
+
+    let updated_link_urls: std::collections::HashSet<String> =
+        updated_links.iter().map(|link| link.url.clone()).collect();
+
+    assert!(updated_link_urls.contains("https://example.com")); // This URL should still be there
+    assert!(!updated_link_urls.contains("https://test.org")); // This URL should be gone
+    assert!(updated_link_urls.contains("https://newsite.com")); // This URL should be new
+
+    // Clean up by deleting the post
+    server
+        .delete(&format!("/api/posts/{}", post_id))
+        .add_cookie(session_cookie.clone())
+        .await;
+}

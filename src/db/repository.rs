@@ -3,7 +3,7 @@ use sea_orm::{ColumnTrait, ConnectionTrait, EntityTrait, QueryFilter};
 
 use super::{
     migrate::migrate_database,
-    models::{posts, sessions, users},
+    models::{links, post_links, posts, sessions, users},
 };
 
 #[derive(Clone, Debug)]
@@ -49,6 +49,19 @@ impl Repository {
             .one(&self.conn)
             .await?;
         Ok(post)
+    }
+
+    #[allow(unused)]
+    pub async fn links_by_post_id(&self, post_id: &str) -> Result<Vec<links::Model>> {
+        let links = post_links::Entity::find()
+            .filter(post_links::Column::PostId.eq(post_id))
+            .find_with_related(links::Entity)
+            .all(&self.conn)
+            .await?
+            .into_iter()
+            .flat_map(|(_, links)| links)
+            .collect();
+        Ok(links)
     }
 }
 

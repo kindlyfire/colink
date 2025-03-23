@@ -1,8 +1,9 @@
 use sea_orm::entity::prelude::*;
 use serde::Serialize;
 
-pub mod users {
+pub mod posts;
 
+pub mod users {
     use super::*;
 
     #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel, Serialize)]
@@ -79,47 +80,6 @@ pub mod sessions {
     impl Related<users::Entity> for Entity {
         fn to() -> RelationDef {
             Relation::User.def()
-        }
-    }
-
-    impl ActiveModelBehavior for ActiveModel {}
-}
-
-pub mod posts {
-    use super::*;
-
-    #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel, Serialize)]
-    #[sea_orm(table_name = "posts")]
-    pub struct Model {
-        #[sea_orm(primary_key, auto_increment = false)]
-        pub id: String,
-        pub created_at: String,
-        pub updated_at: String,
-        pub user_id: String,
-        pub text: String,
-    }
-
-    #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
-    pub enum Relation {
-        #[sea_orm(
-            belongs_to = "users::Entity",
-            from = "Column::UserId",
-            to = "users::Column::Id"
-        )]
-        User,
-        #[sea_orm(has_many = "post_links::Entity")]
-        PostLinks,
-    }
-
-    impl Related<users::Entity> for Entity {
-        fn to() -> RelationDef {
-            Relation::User.def()
-        }
-    }
-
-    impl Related<post_links::Entity> for Entity {
-        fn to() -> RelationDef {
-            Relation::PostLinks.def()
         }
     }
 

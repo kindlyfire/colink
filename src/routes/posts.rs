@@ -107,6 +107,7 @@ async fn create_post(
     };
 
     let post = post.insert(&state.repo.conn).await?;
+    post.update_links(&state.repo).await?;
 
     if let Some(search) = state.get_search() {
         search
@@ -157,6 +158,7 @@ async fn update_post_by_id(
     post.updated_at = Set(now_utc());
 
     let post = post.update(&state.repo.conn).await?;
+    post.update_links(&state.repo).await?;
 
     if let Some(search) = state.get_search() {
         search

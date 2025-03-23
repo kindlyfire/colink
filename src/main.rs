@@ -8,7 +8,7 @@ use search::Search;
 use std::env;
 use tokio::net::TcpListener;
 use tracing::{Level, info};
-use tracing_subscriber::FmtSubscriber;
+use tracing_subscriber::{EnvFilter, prelude::*};
 
 mod db;
 mod routes;
@@ -37,7 +37,6 @@ enum Command {
         host: Option<String>,
 
         /// Port to bind the server to (overrides PORT env var)
-        #[arg(long, value_name = "PORT")]
         port: Option<u16>,
     },
 
@@ -74,8 +73,18 @@ async fn main() -> Result<()> {
     let cli = Cli::parse();
 
     let log_level = if cli.v { Level::DEBUG } else { Level::INFO };
-    let subscriber = FmtSubscriber::builder().with_max_level(log_level).finish();
-    tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
+    let filter = if cli.v {
+        EnvFilter::new(format!("{}", log_level))
+    } else {
+        EnvFilter::new("info")
+            .add_directive("colink=info".parse().unwrap())
+            .add_directive("warn".parse().unwrap())
+    };
+
+    tracing_subscriber::registry()
+        .with(filter)
+        .with(tracing_subscriber::fmt::layer())
+        .init();
 
     match cli.command {
         Command::Serve { host, port } => cmd_serve(host, port).await?,
