@@ -1,3 +1,4 @@
+use std::env;
 use std::time::Duration;
 
 use anyhow::{Context, Result};
@@ -18,7 +19,9 @@ pub struct Search {
 
 impl Search {
     pub async fn new() -> Result<Self> {
-        let client = Client::new("http://127.0.0.1:7700", Some("masterkey"))?;
+        let meili_url =
+            env::var("MEILISEARCH_URL").unwrap_or_else(|_| "http://127.0.0.1:7700".to_string());
+        let client = Client::new(&meili_url, Some("masterkey"))?;
 
         let posts_index = client.index("posts");
         posts_index

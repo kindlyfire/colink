@@ -1,4 +1,18 @@
 services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data/:/data
+    environment:
+      - DATABASE_URL=sqlite:/data/db.sqlite3
+      - MEILISEARCH_URL=http://meilisearch:7700
+    init: true
+    depends_on:
+      - meilisearch
   meilisearch:
     image: getmeili/meilisearch:v1.13
     ports:
