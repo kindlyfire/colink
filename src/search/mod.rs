@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use meilisearch_sdk::{client::Client, settings::Settings};
 use serde::{Deserialize, Serialize};
 
@@ -27,7 +27,8 @@ impl Search {
                     .with_searchable_attributes(["text"])
                     .with_filterable_attributes(["user_id"]),
             )
-            .await?
+            .await
+            .context("Failed to connect to Meilisearch")?
             .wait_for_completion(&client, None, Some(Duration::from_secs(60)))
             .await?;
 

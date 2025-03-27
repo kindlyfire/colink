@@ -49,12 +49,7 @@ impl Model {
     /// Syncs the links present in the post to the database by
     /// creating/updating/deleting post_links and links.
     pub async fn update_links(&self, repo: &Repository) -> Result<()> {
-        // TODO: Make this regex more robust
-        let url_regex = Regex::new(r"https?://[^\s]+").unwrap();
-        let found_urls: HashSet<String> = url_regex
-            .find_iter(&self.text)
-            .map(|m| m.as_str().to_string())
-            .collect();
+        let found_urls = find_urls(&self.text);
 
         let txn = repo.conn.begin().await?;
 
@@ -124,5 +119,67 @@ impl Model {
         txn.commit().await?;
 
         Ok(())
+    }
+}
+
+/// Extracts URLs from text, supporting both plain URLs and Markdown link
+/// format.
+///
+/// It works in two stages:
+/// 1. Extract the Markdown links and remove them from the string.
+/// 2. Extract the plain URLs from the remaining string.
+///
+/// The function removes markdown links from the text to avoid double-matching,
+/// and it's quite lax in allowed URLs.
+///
+/// NOTE: This doesn't handle some edge-cases, like parentheses in URLs. If it
+/// becomes a problem I'll hand-roll a parser at some point.
+pub fn find_urls(text: &str) -> HashSet<String> {
+    let mut urls = HashSet::new();
+    let text = text.to_string();
+
+    // First, extract Markdown links: [text](url)
+    let markdown_regex = Regex::new(r"\[([^\]]*)\]\(([^)]+)\)").unwrap();
+    for cap in markdown_regex.captures_iter(&text) {
+        if let Some(url_match) = cap.get(2) {
+            let url = url_match.as_str().to_string();
+            urls.insert(url);
+        }
+    }
+
+    // Remove markdown links from the text to avoid double matching
+    let text = markdown_regex.replace_all(&text, "").to_string();
+
+    // Now extract plain URLs
+    let url_regex = Regex::new(r"(https?://[^\s]+)").unwrap();
+    for cap in url_regex.captures_iter(&text) {
+        if let Some(url_match) = cap.get(1) {
+            let url = url_match.as_str().to_string();
+            // Remove trailing punctuation that might have been captured
+            let clean_url = url.trim_end_matches(|c| ",.:;!?'\"".contains(c));
+            urls.insert(clean_url.to_string());
+        }
+    }
+
+    urls
+}
+
+#[test]
+pub fn test_find_urls() {
+    let urls = vec![
+        "https://example.com",
+        "http://example.com",
+        "http://example.com/apathandstuff",
+        "http://example.c/?blah=true+test#hash",
+    ];
+
+    for url in urls {
+        let res = find_urls(&format!(
+            "Check this out: {} and also this: [link]({}a)",
+            url, url
+        ));
+        println!("{:?}", res);
+        assert!(res.contains(url));
+        assert!(res.contains(&format!("{}a", url)));
     }
 }
