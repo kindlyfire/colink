@@ -13,6 +13,7 @@ export const api = {
 						method: 'GET',
 					}).json()
 				},
+				retry: false,
 			}),
 
 		useLogin: () =>
@@ -21,6 +22,15 @@ export const api = {
 					return fetchApi<User>('/auth/login', {
 						method: 'POST',
 						body: JSON.stringify(data),
+					}).json()
+				},
+			}),
+
+		useLogout: () =>
+			useMutation({
+				async mutationFn() {
+					return fetchApi('/auth/logout', {
+						method: 'POST',
 					})
 				},
 			}),

@@ -1,7 +1,7 @@
 import { useMutation } from '@tanstack/vue-query'
 import { z } from 'zod'
 import { getByPath, setByPath, type Path } from './dot-path-value'
-import { computed, reactive, toRef } from 'vue'
+import { computed, reactive, toRaw, toRef } from 'vue'
 
 interface UseFormOptions<TSchema extends z.ZodTypeAny> {
 	schema: TSchema
@@ -14,6 +14,9 @@ interface UseFormOptions<TSchema extends z.ZodTypeAny> {
 export function useForm<TSchema extends z.ZodTypeAny>(options: UseFormOptions<TSchema>) {
 	type TInput = z.input<TSchema>
 	const clone = options.clone ?? structuredClone
+
+	// Just for safety's sake
+	options.initialValues = toRaw(options.initialValues)
 
 	const state = reactive({
 		values: clone(options.initialValues) as TInput,
@@ -30,12 +33,15 @@ export function useForm<TSchema extends z.ZodTypeAny>(options: UseFormOptions<TS
 
 	function getInputProps<T extends Path<TInput>>(name: T) {
 		const errors = computed(() => state.errors.filter(error => error.path.join('.') === name))
+		const set = (v: any) => {
+			setByPath(state.values, name, v)
+			if (errors.value.length) validatePath(name)
+		}
 		return {
+			value: getByPath(state.values, name),
+			onInput: (e: Event) => set((e.target as HTMLInputElement).value),
 			modelValue: getByPath(state.values, name),
-			'onUpdate:modelValue': (value: any) => {
-				setByPath(state.values, name, value)
-				if (errors.value.length) validatePath(name)
-			},
+			'onUpdate:modelValue': set,
 			onBlur: () => {
 				validatePath(name)
 			},
@@ -69,6 +75,11 @@ export function useForm<TSchema extends z.ZodTypeAny>(options: UseFormOptions<TS
 		state.errors = errors
 	}
 
+	function reset() {
+		state.values = clone(options.initialValues)
+		state.errors = []
+	}
+
 	const mutation = useMutation({
 		async mutationFn(data: z.output<TSchema>) {
 			if (options.validateAsync) {
@@ -94,5 +105,6 @@ export function useForm<TSchema extends z.ZodTypeAny>(options: UseFormOptions<TS
 		onSubmit,
 		setErrors,
 		mutation,
+		reset,
 	}
 }

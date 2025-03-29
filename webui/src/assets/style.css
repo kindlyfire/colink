@@ -1,0 +1,12 @@
+@import 'tailwindcss';
+@plugin "daisyui";
+
+@layer components {
+	.a-container {
+		@apply max-w-[720px] mx-auto p-2;
+	}
+
+	.a-container-flush {
+		@apply max-w-[720px] mx-auto;
+	}
+}

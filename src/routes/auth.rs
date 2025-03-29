@@ -2,7 +2,7 @@ use super::{AppError, AppState, ExtractAppState, ExtractUser};
 use crate::db::{IdType, models::sessions, now_utc};
 use axum::{
     Json, Router,
-    extract::State,
+    extract::{Request, State},
     http::{HeaderValue, StatusCode, header::SET_COOKIE},
     response::{IntoResponse, Response},
     routing::{get, post},
@@ -88,9 +88,21 @@ async fn login(
     Ok(response)
 }
 
-// TODO: Make sure this can't be called using a form (check for
-// application/json? seems simplest)
-async fn logout(State(state): ExtractAppState, jar: CookieJar) -> Result<Response, AppError> {
+async fn logout(
+    State(state): ExtractAppState,
+    jar: CookieJar,
+    req: Request,
+) -> Result<Response, AppError> {
+    // Make sure Content-Type is application/json, so we can't get logged out by
+    // a form submission
+    req.headers()
+        .get("content-type")
+        .filter(|h| h.to_str().unwrap_or("").starts_with("application/json"))
+        .ok_or(AppError::new(
+            StatusCode::UNSUPPORTED_MEDIA_TYPE,
+            "Content-Type must be application/json",
+        ))?;
+
     let session_token = jar
         .get("colink_session")
         .map(|cookie| cookie.value().to_owned());
