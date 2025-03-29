@@ -1,6 +1,8 @@
 use anyhow::Result;
 use sea_orm::{ColumnTrait, ConnectionTrait, EntityTrait, QueryFilter};
 
+use crate::settings::Settings;
+
 use super::{
     migrate::migrate_database,
     models::{links, post_links, posts, sessions, users},
@@ -66,10 +68,7 @@ impl Repository {
 }
 
 async fn create_database() -> Result<sea_orm::DatabaseConnection> {
-    let db_url = format!(
-        "sqlite:{}?mode=rwc",
-        std::env::var("DATABASE_URL").unwrap_or_else(|_| ":memory:".to_string())
-    );
+    let db_url = format!("sqlite:{}?mode=rwc", Settings::instance().db_url);
     let db = sea_orm::Database::connect(db_url).await?;
 
     db.execute(sea_orm::Statement::from_string(

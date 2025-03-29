@@ -1,9 +1,10 @@
-use std::env;
 use std::time::Duration;
 
 use anyhow::{Context, Result};
-use meilisearch_sdk::{client::Client, settings::Settings};
+use meilisearch_sdk::{client::Client, settings::Settings as MeilisearchSettings};
 use serde::{Deserialize, Serialize};
+
+use crate::settings::Settings;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Post {
@@ -19,14 +20,12 @@ pub struct Search {
 
 impl Search {
     pub async fn new() -> Result<Self> {
-        let meili_url =
-            env::var("MEILISEARCH_URL").unwrap_or_else(|_| "http://127.0.0.1:7700".to_string());
-        let client = Client::new(&meili_url, Some("masterkey"))?;
+        let client = Client::new(&Settings::instance().meilisearch_url, Some("masterkey"))?;
 
         let posts_index = client.index("posts");
         posts_index
             .set_settings(
-                &Settings::new()
+                &MeilisearchSettings::new()
                     .with_searchable_attributes(["text"])
                     .with_filterable_attributes(["user_id"]),
             )

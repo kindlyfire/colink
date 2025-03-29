@@ -1,11 +1,11 @@
-use anyhow::{Result, anyhow};
+use anyhow::{Context, Result, anyhow, bail};
 use bcrypt::{DEFAULT_COST, hash};
 use clap::{Parser, Subcommand};
 use db::{IdType, models::users, now_utc, repository::Repository};
 use routes::AppState;
 use sea_orm::{ActiveModelTrait, Set};
 use search::Search;
-use std::env;
+use settings::Settings;
 use tokio::net::TcpListener;
 use tracing::{Level, info};
 use tracing_subscriber::{EnvFilter, prelude::*};
@@ -13,6 +13,7 @@ use tracing_subscriber::{EnvFilter, prelude::*};
 mod db;
 mod routes;
 mod search;
+mod settings;
 
 #[cfg(test)]
 mod tests;
@@ -95,22 +96,16 @@ async fn main() -> Result<()> {
 }
 
 async fn cmd_serve(host: Option<String>, port: Option<u16>) -> Result<()> {
-    // Get host from flag, environment variable, or default
-    let host = host
-        .or_else(|| env::var("HOST").ok())
-        .unwrap_or_else(|| "0.0.0.0".to_string());
-
-    // Get port from flag, environment variable, or default
-    let port = port
-        .or_else(|| env::var("PORT").ok().and_then(|p| p.parse().ok()))
-        .unwrap_or(3000);
-
     let repo = Repository::new().await?;
     let search = Search::new().await?;
 
-    let listener = TcpListener::bind(&format!("{}:{}", host, port))
-        .await
-        .expect("failed to bind address");
+    let listener = TcpListener::bind(&format!(
+        "{}:{}",
+        host.unwrap_or(Settings::instance().host.clone()),
+        port.unwrap_or(Settings::instance().port)
+    ))
+    .await
+    .context("failed to bind address")?;
     let router = routes::get_router(AppState {
         repo,
         search: Some(search),
@@ -119,7 +114,7 @@ async fn cmd_serve(host: Option<String>, port: Option<u16>) -> Result<()> {
     info!("listening on {}", listener.local_addr().unwrap());
     axum::serve(listener, router)
         .await
-        .expect("server failed to start");
+        .context("server failed to start")?;
 
     Ok(())
 }
@@ -132,7 +127,7 @@ async fn cmd_users(command: UserCommand) -> Result<()> {
             // Check if user already exists
             let existing_user = repo.user_by_username(&username).await?;
             if existing_user.is_some() {
-                return Err(anyhow!("User already exists"));
+                bail!("User already exists");
             }
 
             // Create new user

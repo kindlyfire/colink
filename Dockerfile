@@ -16,14 +16,11 @@ RUN apt-get update && \
 COPY Cargo.toml Cargo.lock* ./
 COPY src/ ./src/
 COPY --from=webui-builder /usr/src/webui/dist ./webui/dist
-RUN cargo build --release
+RUN cargo build --release --locked
 
 # Runtime stage
 FROM debian:bookworm-slim
 WORKDIR /app
-# RUN apt-get update && \
-#     apt-get install -y ca-certificates && \
-#     rm -rf /var/lib/apt/lists/*
 COPY --from=builder /usr/src/app/target/release/colink /app/colink
 EXPOSE 3000
 CMD ["./colink", "serve"]
