@@ -14,10 +14,7 @@ use serde::Deserialize;
 use serde_json::{Value, json};
 
 use super::{AppError, AppState, ExtractAppState, ExtractUser};
-use crate::{
-    db::{IdType, models::posts, now_utc},
-    search::Post,
-};
+use crate::db::{IdType, models::posts, now_utc};
 
 #[derive(Deserialize)]
 struct CreatePostRequest {
@@ -66,6 +63,8 @@ async fn get_posts(
 #[derive(Deserialize)]
 struct SearchPostsParams {
     query: String,
+    limit: Option<usize>,
+    offset: Option<usize>,
 }
 
 async fn get_posts_search(
@@ -79,10 +78,16 @@ async fn get_posts_search(
             "Search service not available",
         ));
     }
-
     let search = state.get_search().unwrap();
+
+    let search_params = crate::search::PostSearch {
+        query: params.query,
+        user_id: Some(user.id.clone()),
+        offset: params.offset,
+        limit: params.limit,
+    };
     let posts = search
-        .post_search(&params.query, Some(&user.id))
+        .post_search(&search_params)
         .await
         .map_err(|err| AppError::new(StatusCode::SERVICE_UNAVAILABLE, err.to_string()))?;
 
@@ -110,13 +115,7 @@ async fn create_post(
     post.update_links(&state.repo).await?;
 
     if let Some(search) = state.get_search() {
-        search
-            .post_upsert(Post {
-                id: post.id.clone(),
-                user_id: user.id.clone(),
-                text: post.text.clone(),
-            })
-            .await?;
+        search.post_upsert((&post).try_into()?).await?;
     }
 
     Ok(Json(json!({ "data": post })))
@@ -161,13 +160,7 @@ async fn update_post_by_id(
     post.update_links(&state.repo).await?;
 
     if let Some(search) = state.get_search() {
-        search
-            .post_upsert(Post {
-                id: post.id.clone(),
-                user_id: user.id.clone(),
-                text: post.text.clone(),
-            })
-            .await?;
+        search.post_upsert((&post).try_into()?).await?;
     }
 
     Ok(Json(json!({ "data": post })))

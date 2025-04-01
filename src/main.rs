@@ -101,8 +101,8 @@ async fn cmd_serve(host: Option<String>, port: Option<u16>) -> Result<()> {
 
     let listener = TcpListener::bind(&format!(
         "{}:{}",
-        host.unwrap_or(Settings::instance().host.clone()),
-        port.unwrap_or(Settings::instance().port)
+        host.unwrap_or(Settings::get().host.clone()),
+        port.unwrap_or(Settings::get().port)
     ))
     .await
     .context("failed to bind address")?;

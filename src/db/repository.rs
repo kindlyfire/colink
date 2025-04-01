@@ -68,7 +68,7 @@ impl Repository {
 }
 
 async fn create_database() -> Result<sea_orm::DatabaseConnection> {
-    let db_url = format!("sqlite:{}?mode=rwc", Settings::instance().db_url);
+    let db_url = format!("sqlite:{}?mode=rwc", Settings::get().db_url);
     let db = sea_orm::Database::connect(db_url).await?;
 
     db.execute(sea_orm::Statement::from_string(

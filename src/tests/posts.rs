@@ -4,15 +4,13 @@ use crate::tests::{auth::create_test_user_and_login, setup_test_server};
 
 #[tokio::test]
 async fn test_posts_crud() {
-    let (repo, server) = setup_test_server().await;
+    let (repo, mut server) = setup_test_server().await;
     let (test_user, session_cookie) =
         create_test_user_and_login(&repo, &server, "testuser", "password123").await;
+    server.add_cookie(session_cookie.clone());
 
     // Check there's no posts
-    let get_posts_response = server
-        .get("/api/posts")
-        .add_cookie(session_cookie.clone())
-        .await;
+    let get_posts_response = server.get("/api/posts").await;
     get_posts_response.assert_status_ok();
     let body: Value = get_posts_response.json();
     let posts = body["data"].as_array().unwrap();
@@ -21,7 +19,6 @@ async fn test_posts_crud() {
     // Create a post
     let create_post_response = server
         .post("/api/posts")
-        .add_cookie(session_cookie.clone())
         .json(&json!({
             "text": "This is a test post"
         }))
@@ -34,10 +31,7 @@ async fn test_posts_crud() {
     let post_id = post["id"].as_str().unwrap();
 
     // Check posts again
-    let get_posts_response = server
-        .get("/api/posts")
-        .add_cookie(session_cookie.clone())
-        .await;
+    let get_posts_response = server.get("/api/posts").await;
     get_posts_response.assert_status_ok();
     let body: Value = get_posts_response.json();
     let posts = body["data"].as_array().unwrap();
@@ -47,10 +41,7 @@ async fn test_posts_crud() {
     assert_eq!(posts[0]["user_id"], test_user.id);
 
     // Test pagination with offset - should return empty list
-    let get_posts_paginated_response = server
-        .get("/api/posts?offset=1")
-        .add_cookie(session_cookie.clone())
-        .await;
+    let get_posts_paginated_response = server.get("/api/posts?offset=1").await;
     get_posts_paginated_response.assert_status_ok();
     let body: Value = get_posts_paginated_response.json();
     let paginated_posts = body["data"].as_array().unwrap();
@@ -59,7 +50,6 @@ async fn test_posts_crud() {
     // Update the post
     let update_post_response = server
         .post(&format!("/api/posts/{}", post_id))
-        .add_cookie(session_cookie.clone())
         .json(&json!({
             "text": "This is an updated post"
         }))
@@ -71,10 +61,7 @@ async fn test_posts_crud() {
     assert_eq!(updated_post["id"], post_id);
 
     // Get post by ID and verify update
-    let get_post_response = server
-        .get(&format!("/api/posts/{}", post_id))
-        .add_cookie(session_cookie.clone())
-        .await;
+    let get_post_response = server.get(&format!("/api/posts/{}", post_id)).await;
     get_post_response.assert_status_ok();
     let body: Value = get_post_response.json();
     let post = &body["data"];
@@ -82,19 +69,13 @@ async fn test_posts_crud() {
     assert_eq!(post["id"], post_id);
 
     // Delete the post
-    let delete_post_response = server
-        .delete(&format!("/api/posts/{}", post_id))
-        .add_cookie(session_cookie.clone())
-        .await;
+    let delete_post_response = server.delete(&format!("/api/posts/{}", post_id)).await;
     delete_post_response.assert_status_ok();
     let body: Value = delete_post_response.json();
     assert_eq!(body["success"], true);
 
     // Verify post was deleted by checking posts list is empty
-    let get_posts_response = server
-        .get("/api/posts")
-        .add_cookie(session_cookie.clone())
-        .await;
+    let get_posts_response = server.get("/api/posts").await;
     get_posts_response.assert_status_ok();
     let body: Value = get_posts_response.json();
     let posts = body["data"].as_array().unwrap();
@@ -103,14 +84,14 @@ async fn test_posts_crud() {
 
 #[tokio::test]
 async fn test_posts_search() {
-    let (repo, server) = setup_test_server().await;
+    let (repo, mut server) = setup_test_server().await;
     let (_, session_cookie) =
         create_test_user_and_login(&repo, &server, "testuser", "password123").await;
+    server.add_cookie(session_cookie.clone());
 
     // Create first post
     let create_post1_response = server
         .post("/api/posts")
-        .add_cookie(session_cookie.clone())
         .json(&json!({
             "text": "This is a post about cats"
         }))
@@ -123,7 +104,6 @@ async fn test_posts_search() {
     // Create second post
     let create_post2_response = server
         .post("/api/posts")
-        .add_cookie(session_cookie.clone())
         .json(&json!({
             "text": "This is another post about dogs"
         }))
@@ -134,10 +114,7 @@ async fn test_posts_search() {
     let post2_id = post2["id"].as_str().unwrap();
 
     // Search for "post" which should return both posts
-    let search_posts_response = server
-        .get("/api/posts/search?query=post")
-        .add_cookie(session_cookie.clone())
-        .await;
+    let search_posts_response = server.get("/api/posts/search?query=post").await;
     search_posts_response.assert_status_ok();
     let body: Value = search_posts_response.json();
     let search_results = body["data"].as_array().unwrap();
@@ -151,11 +128,15 @@ async fn test_posts_search() {
     assert!(result_ids.contains(&post1_id));
     assert!(result_ids.contains(&post2_id));
 
+    // ... but with a limit of 1 it should only return one
+    let search_posts_response = server.get("/api/posts/search?query=post&limit=1").await;
+    search_posts_response.assert_status_ok();
+    let body: Value = search_posts_response.json();
+    let search_results = body["data"].as_array().unwrap();
+    assert_eq!(search_results.len(), 1);
+
     // Search for "cats" which should return only the first post
-    let search_cats_response = server
-        .get("/api/posts/search?query=cats")
-        .add_cookie(session_cookie.clone())
-        .await;
+    let search_cats_response = server.get("/api/posts/search?query=cats").await;
     search_cats_response.assert_status_ok();
     let body: Value = search_cats_response.json();
     let search_results = body["data"].as_array().unwrap();
@@ -163,37 +144,28 @@ async fn test_posts_search() {
     assert_eq!(search_results[0]["id"], post1_id);
 
     // Search for something that doesn't exist
-    let search_none_response = server
-        .get("/api/posts/search?query=nonexistent")
-        .add_cookie(session_cookie.clone())
-        .await;
+    let search_none_response = server.get("/api/posts/search?query=nonexistent").await;
     search_none_response.assert_status_ok();
     let body: Value = search_none_response.json();
     let search_results = body["data"].as_array().unwrap();
     assert_eq!(search_results.len(), 0);
 
     // Clean up by deleting the posts
-    server
-        .delete(&format!("/api/posts/{}", post1_id))
-        .add_cookie(session_cookie.clone())
-        .await;
-    server
-        .delete(&format!("/api/posts/{}", post2_id))
-        .add_cookie(session_cookie.clone())
-        .await;
+    server.delete(&format!("/api/posts/{}", post1_id)).await;
+    server.delete(&format!("/api/posts/{}", post2_id)).await;
 }
 
 #[tokio::test]
 async fn test_post_links() {
-    let (repo, server) = setup_test_server().await;
+    let (repo, mut server) = setup_test_server().await;
     let (_, session_cookie) =
         create_test_user_and_login(&repo, &server, "testuser", "password123").await;
+    server.add_cookie(session_cookie.clone());
 
     // Create a post with two links
     let post_text = "Check out these sites: https://example.com and https://test.org";
     let create_post_response = server
         .post("/api/posts")
-        .add_cookie(session_cookie.clone())
         .json(&json!({
             "text": post_text
         }))
@@ -218,7 +190,6 @@ async fn test_post_links() {
     let updated_post_text = "Check out these sites: https://example.com and https://newsite.com";
     let update_post_response = server
         .post(&format!("/api/posts/{}", post_id))
-        .add_cookie(session_cookie.clone())
         .json(&json!({
             "text": updated_post_text
         }))
@@ -237,8 +208,5 @@ async fn test_post_links() {
     assert!(updated_link_urls.contains("https://newsite.com")); // This URL should be new
 
     // Clean up by deleting the post
-    server
-        .delete(&format!("/api/posts/{}", post_id))
-        .add_cookie(session_cookie.clone())
-        .await;
+    server.delete(&format!("/api/posts/{}", post_id)).await;
 }

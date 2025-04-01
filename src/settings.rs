@@ -1,5 +1,5 @@
 use std::env;
-use std::sync::LazyLock;
+use std::sync::{LazyLock, RwLock};
 
 #[derive(Debug, Clone)]
 pub struct Settings {
@@ -45,8 +45,24 @@ impl Settings {
         settings
     }
 
-    pub fn instance() -> &'static Settings {
-        static INSTANCE: LazyLock<Settings> = LazyLock::new(Settings::new);
+    pub fn instance() -> &'static RwLock<Settings> {
+        static INSTANCE: LazyLock<RwLock<Settings>> =
+            LazyLock::new(|| RwLock::new(Settings::new()));
         &INSTANCE
+    }
+
+    pub fn get() -> Settings {
+        Settings::instance()
+            .read()
+            .expect("Failed to acquire read lock for Settings")
+            .clone()
+    }
+
+    #[allow(unused)]
+    pub fn replace(settings: Settings) {
+        let mut current = Settings::instance()
+            .write()
+            .expect("Failed to acquire write lock for Settings");
+        *current = settings;
     }
 }

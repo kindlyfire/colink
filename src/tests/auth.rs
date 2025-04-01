@@ -54,14 +54,12 @@ pub(super) async fn create_test_user_and_login(
 
 #[tokio::test]
 async fn test_auth() {
-    let (repo, server) = setup_test_server().await;
+    let (repo, mut server) = setup_test_server().await;
     let (test_user, session_cookie) =
         create_test_user_and_login(&repo, &server, "testuser", "password123").await;
+    server.add_cookie(session_cookie.clone());
 
-    let response = server
-        .get("/api/auth/me")
-        .add_cookie(session_cookie.clone())
-        .await;
+    let response = server.get("/api/auth/me").await;
 
     response.assert_status_ok();
     let user_data: serde_json::Value = response.json();
