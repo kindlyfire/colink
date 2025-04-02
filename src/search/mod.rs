@@ -1,11 +1,16 @@
 use std::time::Duration;
 
-use anyhow::{Context, Result};
+use anyhow::{Context, Ok, Result};
 use jiff::Timestamp;
 use meilisearch_sdk::{client::Client, settings::Settings as MeilisearchSettings};
+use sea_orm::EntityTrait;
 use serde::{Deserialize, Serialize};
+use tracing::{info, warn};
 
-use crate::{db::models::posts, settings::Settings};
+use crate::{
+    db::{models::posts, repository::Repository},
+    settings::Settings,
+};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Post {
@@ -105,6 +110,48 @@ impl Search {
             .into_iter()
             .map(|hit| hit.result)
             .collect())
+    }
+
+    pub async fn reindex(&self, repo: Repository) -> Result<()> {
+        let posts = posts::Entity::find()
+            .all(&repo.conn)
+            .await
+            .context("Failed to fetch posts from database")?;
+
+        let posts_index = self.client.index("posts");
+
+        posts_index
+            .delete_all_documents()
+            .await
+            .context("Failed to delete all documents from Meilisearch")?
+            .wait_for_completion(&self.client, None, Some(Duration::from_secs(60)))
+            .await
+            .context("Failed to delete all documents from Meilisearch (wait_for_completion)")?;
+
+        let search_posts = posts
+            .iter()
+            .filter_map(|post| {
+                let post: Result<Post> = post.try_into();
+                if post.is_err() {
+                    warn!("Failed to convert post to search index format: {:?}", post);
+                }
+                post.ok()
+            })
+            .collect::<Vec<_>>();
+
+        if !search_posts.is_empty() {
+            posts_index
+                .add_documents(&search_posts, Some("id"))
+                .await
+                .context("Failed to add documents to Meilisearch")?
+                .wait_for_completion(&self.client, None, Some(Duration::from_secs(60)))
+                .await
+                .context("Failed to add documents to Meilisearch (wait_for_completion)")?;
+        }
+
+        info!("Reindexed {} posts", search_posts.len());
+
+        Ok(())
     }
 }
 

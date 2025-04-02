@@ -78,8 +78,9 @@ async fn login(
     let mut response = Json(response_body).into_response();
 
     let cookie = format!(
-        "colink_session={}; Path=/; HttpOnly; SameSite=Strict",
-        session.token
+        "colink_session={}; Path=/; HttpOnly; SameSite=Strict; Max-Age={}",
+        session.token,
+        90 * 24 * 60 * 60 // 90 days
     );
     response
         .headers_mut()

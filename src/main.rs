@@ -46,6 +46,12 @@ enum Command {
         #[command(subcommand)]
         command: UserCommand,
     },
+
+    /// Search management commands
+    Search {
+        #[command(subcommand)]
+        command: SearchCommand,
+    },
 }
 
 #[derive(Subcommand)]
@@ -69,6 +75,12 @@ enum UserCommand {
     },
 }
 
+#[derive(Subcommand)]
+enum SearchCommand {
+    /// Reindex all posts in the search engine
+    Reindex,
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     let cli = Cli::parse();
@@ -90,6 +102,7 @@ async fn main() -> Result<()> {
     match cli.command {
         Command::Serve { host, port } => cmd_serve(host, port).await?,
         Command::Users { command } => cmd_users(command).await?,
+        Command::Search { command } => cmd_search(command).await?,
     }
 
     Ok(())
@@ -157,6 +170,21 @@ async fn cmd_users(command: UserCommand) -> Result<()> {
             user_model.update(&repo.conn).await?;
 
             info!("Updated password for user: {}", username);
+        }
+    };
+
+    Ok(())
+}
+
+async fn cmd_search(command: SearchCommand) -> Result<()> {
+    let repo = Repository::new().await?;
+    let search = Search::new().await?;
+
+    match command {
+        SearchCommand::Reindex => {
+            info!("Reindexing all posts in search engine...");
+            search.reindex(repo).await?;
+            info!("Reindexing complete");
         }
     };
 
