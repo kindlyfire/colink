@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{collections::HashSet, sync::Arc};
 
 use axum::{
     Json, Router,
@@ -14,7 +14,11 @@ use serde::Deserialize;
 use serde_json::{Value, json};
 
 use super::{AppError, AppState, ExtractAppState, ExtractUser};
-use crate::db::{IdType, models::posts, now_utc};
+use crate::db::{
+    IdType,
+    models::{links, post_links, posts},
+    now_utc,
+};
 
 #[derive(Deserialize)]
 struct CreatePostRequest {
@@ -53,12 +57,35 @@ async fn get_posts(
         .await?;
 
     let posts = posts::Entity::find()
+        .find_with_related(post_links::Entity)
         .filter(posts::Column::UserId.eq(user.id.clone()))
         .order_by_desc(posts::Column::CreatedAt)
         .limit(limit)
         .offset(offset)
         .all(&state.repo.conn)
         .await?;
+
+    let link_ids = posts
+        .iter()
+        .flat_map(|(_post, links)| links.iter().map(|link| link.link_id.clone()))
+        .collect::<HashSet<_>>();
+    let all_links = links::Entity::find()
+        .filter(links::Column::Id.is_in(link_ids))
+        .all(&state.repo.conn)
+        .await?;
+
+    let posts = posts
+        .iter()
+        .map(|(post, links)| {
+            let mut json = json!(post);
+            let links = all_links
+                .iter()
+                .filter(|link| links.iter().any(|l| l.link_id == link.id))
+                .collect::<Vec<_>>();
+            json["links"] = json!(links);
+            json
+        })
+        .collect::<Vec<_>>();
 
     Ok(Json(json!({
         "data": posts,
