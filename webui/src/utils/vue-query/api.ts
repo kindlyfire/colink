@@ -37,13 +37,24 @@ export const api = {
 	},
 
 	posts: {
-		useList: () =>
+		useList: (options?: MaybeRef<{ limit?: number; offset?: number }>) =>
 			useQuery({
-				queryKey: ['posts'],
+				queryKey: ['posts', options],
 				async queryFn() {
-					return fetchApi<{ data: Post[] }>('/posts', {
-						method: 'GET',
-					}).json()
+					const options_ = unref(options)
+					const params = new URLSearchParams()
+					if (options_?.limit !== undefined) {
+						params.append('limit', options_.limit.toString())
+					}
+					if (options_?.offset !== undefined) {
+						params.append('offset', options_.offset.toString())
+					}
+					return fetchApi<{ data: Post[]; total: number }>(
+						'/posts?' + params.toString(),
+						{
+							method: 'GET',
+						}
+					).json()
 				},
 			}),
 

@@ -7,8 +7,8 @@ use axum::{
     routing::get,
 };
 use sea_orm::{
-    ActiveModelTrait, ColumnTrait, EntityTrait, IntoActiveModel, ModelTrait, QueryFilter,
-    QueryOrder, QuerySelect, Set,
+    ActiveModelTrait, ColumnTrait, EntityTrait, IntoActiveModel, ModelTrait, PaginatorTrait,
+    QueryFilter, QueryOrder, QuerySelect, Set,
 };
 use serde::Deserialize;
 use serde_json::{Value, json};
@@ -47,6 +47,11 @@ async fn get_posts(
     let limit = params.limit.unwrap_or(10).clamp(1, 500);
     let offset = params.offset.unwrap_or(0);
 
+    let total = posts::Entity::find()
+        .filter(posts::Column::UserId.eq(user.id.clone()))
+        .count(&state.repo.conn)
+        .await?;
+
     let posts = posts::Entity::find()
         .filter(posts::Column::UserId.eq(user.id.clone()))
         .order_by_desc(posts::Column::CreatedAt)
@@ -56,7 +61,8 @@ async fn get_posts(
         .await?;
 
     Ok(Json(json!({
-        "data": posts
+        "data": posts,
+        "total": total
     })))
 }
 

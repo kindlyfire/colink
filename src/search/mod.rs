@@ -80,8 +80,6 @@ impl Search {
     }
 
     /// Search for posts with filtering and pagination
-    ///
-    /// * `search_params` - Search parameters including query text, user filter, and pagination options
     pub async fn post_search(&self, search_params: &PostSearch) -> Result<Vec<Post>> {
         let posts_index = self.client.index("posts");
         let mut search_query = posts_index.search();
